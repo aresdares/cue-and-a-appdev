@@ -1,5 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+//  note: 
+//      toMap - get Dart object -> turn into Map -> save into FireBase
+//      fromMap - get FireBase map + doc.Id -> turn into Dart object
+//  
+//      toMap is used when adding TO the firebase
+//      fromMap is used when adding TO your code
+//  
+//      "factory" sa fromMap means 
+//      - ignore the fact that there is no constructor (cz dart strictly enforces constructors)
+//      - "trust me bro may return statement to, i'll handle it. don't error" type of thing
+
 //  NOTEBOOK class
 class Notebook {
     final String id;
@@ -18,7 +29,6 @@ class Notebook {
     });
 
     //  toMap method
-    //  get Dart object -> turn into Map -> save into FireBase
     Map<String, dynamic> toMap() {
         //  returns a dictionary/map
         return
@@ -31,7 +41,6 @@ class Notebook {
     }
 
     //  fromMap method
-    //  get FireBase map + doc.Id -> turn into Dart object
     factory Notebook.fromMap(Map<String, dynamic>map,String docId) {
         return Notebook(
         id: docId,
@@ -39,6 +48,45 @@ class Notebook {
         color: map['color'] ?? '#2196F3',
         dateCreated: (map['dateCreated'] as Timestamp?)?.toDate() ?? DateTime.now(),
         dateModified: (map['dateModified'] as Timestamp?)?.toDate() ?? DateTime.now(),
+        );
+    }
+}
+
+class Note {
+    final String id; 
+    final String? notebookId; // NOTE: nullable! null = untagged ("None")
+    final String title;
+    final DateTime dateCreated;
+    final DateTime dateModified;
+
+    //  constructor
+    Note({
+        required this.id,
+        this.notebookId,
+        required this.title,
+        required this.dateCreated,
+        required this.dateModified,
+    });
+
+    //  toMap method
+    Map<String, dynamic> toMap() {
+        return {
+        'notebookId': notebookId,
+        'title': title,
+        'dateCreated': Timestamp.fromDate(dateCreated),
+        'dateModified': Timestamp.fromDate(dateModified),
+        };
+    }
+
+    //  fromMap method
+    factory Note.fromMap(Map<String, dynamic> map, String docId) {
+        return Note(
+        //  docID to identify ID of data you got from firebase
+        id: docId,
+        notebookId: map['notebookId'], // stays null if untagged
+        title: map['title']??'Unnamed Note',
+        dateCreated: (map['dateCreated'] as Timestamp?)?.toDate()??DateTime.now(),
+        dateModified: (map['dateModified'] as Timestamp?)?.toDate()??DateTime.now(),
         );
     }
 }
