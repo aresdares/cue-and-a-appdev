@@ -7,7 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 //      toMap is used when adding TO the firebase
 //      fromMap is used when adding TO your code
 //  
-//      "factory" sa fromMap means 
+//      "factory" sa fromMap apparemtly means 
 //      - ignore the fact that there is no constructor (cz dart strictly enforces constructors)
 //      - "trust me bro may return statement to, i'll handle it. don't error" type of thing
 
@@ -87,6 +87,42 @@ class Note {
         title: map['title']??'Unnamed Note',
         dateCreated: (map['dateCreated'] as Timestamp?)?.toDate()??DateTime.now(),
         dateModified: (map['dateModified'] as Timestamp?)?.toDate()??DateTime.now(),
+        );
+    }
+}
+
+class ContentItem{
+    final String id; 
+    final String noteId;
+    final String topic; // LEFT column (cue/topic)
+    final String information; // RIGHT column (info/definition)
+    final int score; // mastery score for Flashcard / Recall mode
+
+    ContentItem({
+        required this.id,
+        required this.noteId,
+        required this.topic,
+        required this.information,
+        this.score = 0,
+    });
+
+    Map<String,dynamic> toMap() {
+        return{
+            'noteId': noteId,
+            'topic': topic,
+            'information': information,
+            'score': score,
+        };
+    }
+
+    factory ContentItem.fromMap(Map<String,dynamic>map,String docId){
+        return ContentItem(
+            //  yeah yeah docID
+            id: docId,
+            noteId: map['noteId']??'',
+            topic: map['topic']??'',
+            information: map['information']??'',
+            score: map['score']??0,
         );
     }
 }
