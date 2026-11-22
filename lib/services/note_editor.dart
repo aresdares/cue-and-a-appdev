@@ -64,4 +64,53 @@ class NoteEditor {
     }
   }
 
+  //  listener for EVERY SINGLE CORNELL ROW
+  //  every topic + definition
+  Stream<List<ContentItem>> streamContentItems(String noteId){
+    return getContentsCollection(noteId).orderBy('createdAt',descending: false)
+      .snapshots()
+      .map((snapshot){
+        return snapshot.docs.map((doc){
+            Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+            return ContentItem.fromMap(data,doc.id);
+        }).toList();
+      }
+    );
+  }
+
+  Future<String> addContentRow({
+    required String noteId,
+    String topic='',
+    String information='',
+  }) async {
+    try{
+
+      //  create ContentItem object for use
+      ContentItem newItem = ContentItem(
+        id: '',
+        noteId: noteId,
+        topic: topic,
+        information: information,
+        score: 0,
+      );
+
+      //  convert into Map via toMap() and add createdAt
+      Map<String, dynamic> data=newItem.toMap();
+      data['createdAt']=FieldValue.serverTimestamp();
+
+      //  save to firebasee
+      DocumentReference docRef=await getContentsCollection(noteId).add(data);
+      await updateLastModified(noteId);
+
+      //  return it
+      return docRef.id;
+
+    }catch(e){
+      print('Error adding row: $e');
+      return '';
+    }
+  }
+
+  
+
 }
