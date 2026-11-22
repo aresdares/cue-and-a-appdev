@@ -78,6 +78,7 @@ class NoteEditor {
     );
   }
 
+  //  CRUD METHOD: CREATE content
   Future<String> addContentRow({
     required String noteId,
     String topic='',
@@ -111,6 +112,38 @@ class NoteEditor {
     }
   }
 
-  
+  //  CRUD METHOD: UPDATE content 
+  Future<void> updateContentRow({
+    required String noteId,
+    required String contentId,
+    required String topic,
+    required String information,
+  }) async {
+    try{
+
+      //  get document and update with parameters
+      await getContentsCollection(noteId).doc(contentId).update({
+        'topic': topic,
+        'information': information,
+      });
+
+      await updateLastModified(noteId);
+    }catch(e){
+      print('Error updating row: $e');
+    }
+  }
+
+  //  CRUD METHOD: delete row
+  Future<void> deleteContentRow({
+    required String noteId,
+    required String contentId,
+  }) async {
+    try{
+      await getContentsCollection(noteId).doc(contentId).delete();
+      await updateLastModified(noteId);
+    }catch(e){
+      print('Error deleting row: $e');
+    }
+  }
 
 }
