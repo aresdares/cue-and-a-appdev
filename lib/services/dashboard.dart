@@ -33,4 +33,11 @@ class DashboardUtil {
 
     return Note.fromMap(map.data() as Map<String,dynamic>, id);
   }
+
+  Future<void> moveNote(String noteId, String? notebookId) async{
+    await FirebaseFirestore.instance.collection('users').doc(userID).collection('notebooks').doc(noteId).update({
+      'notebookId':notebookId,
+      'dateModified':DateTime.now()
+    });
+  }
 }
