@@ -28,4 +28,40 @@ class NoteEditor {
     });
   }
 
+  //  listen to live changes being done on a single note
+  //  USE THIS FOR THE NOTION-STYLE TITLE CHANGE THING
+  Stream<Note> streamNote(String noteId){
+    return getNotesCollection().doc(noteId).snapshots().map(
+      //  get doc that firestore gave
+      (doc){
+        //  1. get the data from the doc
+        //  2. treat as Map object but return null if the doc doesn't exist
+        Map<String,dynamic> data=doc.data() as Map<String, dynamic>? ?? {};
+        //  3. return the extracted data that spits out a Note object
+        return Note.fromMap(data,doc.id);
+      }
+    );
+  }
+
+  //  saves new title if user edits the header
+  Future<void> updateNoteTitle(String noteId, String newTitle) async {
+    try{
+      //  get title
+      //  return Unnamed Note if it wasn't given a name
+      String finalTitle = newTitle.trim();
+      if(finalTitle.isEmpty){
+        finalTitle = 'Unnamed Note';
+      }
+
+      //  update otherwise 
+      await getNotesCollection().doc(noteId).update({
+        'title':finalTitle,
+        'dateModified':Timestamp.now(),
+      });
+
+    }catch(e){
+      print('Error updating title: $e');
+    }
+  }
+
 }
