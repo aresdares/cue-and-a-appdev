@@ -5,6 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
 
+import '../services/test_note_editor.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
@@ -20,7 +22,8 @@ class FirebaseTestApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      //home: const ConnectionTestScreen(),
+      //  change to home: const NoteEditorTestScreen(),
+      //  to test note_editor (assuming test_note_editor is still there)
       home: const FlashcardPage(),
     );
   }
