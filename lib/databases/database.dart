@@ -96,7 +96,7 @@ class ContentItem{
     final String noteId;
     final String topic; // LEFT column (cue/topic)
     final String information; // RIGHT column (info/definition)
-    final int score; // mastery score for Flashcard / Recall mode
+    int score; // mastery score for Flashcard / Recall mode
 
     ContentItem({
         required this.id,
