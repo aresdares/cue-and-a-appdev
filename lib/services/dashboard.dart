@@ -14,7 +14,7 @@ class DashboardUtil {
     return referenceObj.id;
   }
 
-  Future<String> createNote(String title, {String? notebookId}) async{
+  Future<String> createNote(String title, {String? notebookId,}) async{
     Note note=Note(id: "", title: title, notebookId: notebookId, dateCreated: DateTime.now(), dateModified: DateTime.now());
     
     DocumentReference referenceObj= await FirebaseFirestore.instance.collection('users').doc(userID).collection('notes').add(note.toMap());
@@ -39,5 +39,10 @@ class DashboardUtil {
       'notebookId':notebookId,
       'dateModified':DateTime.now()
     });
+  }
+
+  Future<void> copyNote(String noteId, String? notebookId) async{
+    Note note=await getNote(noteId);
+    createNote(note.title,notebookId: notebookId);
   }
 }
