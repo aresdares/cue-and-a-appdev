@@ -25,15 +25,15 @@ class _FlashcardPageState extends State<FlashcardPage> {
   // FOR TESTING PURPOSES placeholder content item.
   // I need to replace this with getting contentitems from Firebase.
     // final content = [
-    //   ContentItem(id:"1",noteId:"A",topic:"Grid World",information:"A maze-like problem"),
-    //   ContentItem(id:"2",noteId:"A",topic:"Grid World",information:"Noisy movement: actions do not always go as planned"),
-    //   ContentItem(id:"3",noteId:"A",topic:"Grid World",information:"The agent receives rewards each time step"),
-    //   ContentItem(id:"4",noteId:"A",topic:"Grid World",information:"Goal: maximize sum of rewards"),
-    //   ContentItem(id:"5",noteId:"A",topic:"Markov Decision Process",information:"An MDP is defined by: \n- A set of states s\n- A set of actions a\n- A transition function T(s, a, s')\n- A reward function R(s, a, s')\n- A start state s_0\n- Maybe a terminal state"),
-    //   ContentItem(id:"6",noteId:"A",topic:"Markov Decision Process",information:"are non-deterministic search problems"),
-    //   ContentItem(id:"7",noteId:"A",topic:"Markov",information:"generally means that given the present state, the future and the past are independent"),
-    //   ContentItem(id:"8",noteId:"A",topic:"Markov",information:"for Markov decision processes, means an action outcomes depend only on the current state"),
-    //   ContentItem(id:"9",noteId:"A",topic:"Markov",information:"This is just like search where the successor function could only depend on the current state (not the history)"),
+    //   ContentItem(id:"0",noteId:"A",topic:"Grid World",information:"A maze-like problem"),
+    //   ContentItem(id:"1",noteId:"A",topic:"Grid World",information:"Noisy movement: actions do not always go as planned"),
+    //   ContentItem(id:"2",noteId:"A",topic:"Grid World",information:"The agent receives rewards each time step"),
+    //   ContentItem(id:"3",noteId:"A",topic:"Grid World",information:"Goal: maximize sum of rewards"),
+    //   ContentItem(id:"4",noteId:"A",topic:"Markov Decision Process",information:"is defined by: \n- A set of states s\n- A set of actions a\n- A transition function T(s, a, s')\n- A reward function R(s, a, s')\n- A start state s_0\n- Maybe a terminal state"),
+    //   ContentItem(id:"5",noteId:"A",topic:"Markov Decision Process",information:"are non-deterministic search problems"),
+    //   ContentItem(id:"6",noteId:"A",topic:"Markov",information:"generally means that given the present state, the future and the past are independent"),
+    //   ContentItem(id:"7",noteId:"A",topic:"Markov",information:"for Markov decision processes, means an action outcomes depend only on the current state"),
+    //   ContentItem(id:"8",noteId:"A",topic:"Markov",information:"This is just like search where the successor function could only depend on the current state (not the history)"),
     // ];
 
   //String uid = "ARLMJ9M6YKUD6HgqY29mN0bSIbD2"; 
