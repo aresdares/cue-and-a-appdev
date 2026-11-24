@@ -22,14 +22,14 @@ class _FlashcardPageState extends State<FlashcardPage> {
   // I need to replace this with getting contentitems from Firebase.
   final content = [
     ContentItem(id:"1",noteId:"A",topic:"Grid World",information:"A maze-like problem"),
-    ContentItem(id:"2",noteId:"A",topic:"Grid World",information:"Noisy movement : actions do not always go as planned"),
+    ContentItem(id:"2",noteId:"A",topic:"Grid World",information:"Noisy movement: actions do not always go as planned"),
     ContentItem(id:"3",noteId:"A",topic:"Grid World",information:"The agent receives rewards each time step"),
-    ContentItem(id:"4",noteId:"A",topic:"Grid World",information:"Goal : maximize sum of rewards"),
-    ContentItem(id:"5",noteId:"A",topic:"Markov Decision Process",information:"An MDP is defined by : \n A set of states s \n A set of actions a \n A transition function T ( s , a , s' ) \n A reward function R ( s , a , s' ) \n A start state s_0 \n Maybe a terminal state"),
+    ContentItem(id:"4",noteId:"A",topic:"Grid World",information:"Goal: maximize sum of rewards"),
+    ContentItem(id:"5",noteId:"A",topic:"Markov Decision Process",information:"An MDP is defined by: \n- A set of states s\n- A set of actions a\n- A transition function T(s, a, s')\n- A reward function R(s, a, s')\n- A start state s_0\n- Maybe a terminal state"),
     ContentItem(id:"6",noteId:"A",topic:"Markov Decision Process",information:"are non-deterministic search problems"),
-    ContentItem(id:"7",noteId:"A",topic:"Markov",information:"generally means that given the present state , the future and the past are independent"),
-    ContentItem(id:"8",noteId:"A",topic:"Markov",information:"for Markov decision processes , means an action outcoms depend only on the current state"),
-    ContentItem(id:"9",noteId:"A",topic:"Markov",information:"This is just like search where the successor function could only depend on the current state ( not the history )"),
+    ContentItem(id:"7",noteId:"A",topic:"Markov",information:"generally means that given the present state, the future and the past are independent"),
+    ContentItem(id:"8",noteId:"A",topic:"Markov",information:"for Markov decision processes, means an action outcoms depend only on the current state"),
+    ContentItem(id:"9",noteId:"A",topic:"Markov",information:"This is just like search where the successor function could only depend on the current state (not the history)"),
   ];
   
   bool flashcard = false; // Will get this bool from dashboard or note page
@@ -37,6 +37,509 @@ class _FlashcardPageState extends State<FlashcardPage> {
   List<ContentItem> noteContent = [];
   List<ContentItem> cardContent = [];
   List<String> blankedInfo = [];
+  bool filterWords = true;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   final TextEditingController blankController = TextEditingController();
 
@@ -56,7 +559,7 @@ class _FlashcardPageState extends State<FlashcardPage> {
     // DEBUG text to see what's in cardContent
     String cards = "";
     for(final card in noteContent){
-      cards += card.topic + " " + card.score.toString() + "\n";
+      cards += "${card.topic} ${card.score}\n";
     }
 
     if(flashcard){
@@ -71,10 +574,10 @@ class _FlashcardPageState extends State<FlashcardPage> {
               }), 
               child: Text("[F] | B")
             ),
-            Text("\n"+cards),
+            Text("\n$cards"),
             Text(cardContent[0].topic),
             Text(cardContent[0].information),
-            Text(cardContent[0].score.toString()),
+            Text("\n[DEBUG] score: ${cardContent[0].score}\n"),
             ElevatedButton(
               onPressed: () => nextContent(-1), 
               child: Text("Got it wrong")
@@ -98,13 +601,28 @@ class _FlashcardPageState extends State<FlashcardPage> {
               }), 
               child: Text("F | [B]")
             ),
-            Text("\n"+cards),
+            Text("\n$cards"),
             blankInfo(cardContent[0].topic,cardContent[0].information),
             Text("\n[DEBUG] answer: ${blankedInfo[1]}"),
             Text(""),
             ElevatedButton(
               onPressed: () => checkBlank(), 
               child: Text("Check Answer")
+            ),
+            SizedBox(
+              width:300,
+              child:Row(
+                children: [
+                  Checkbox(
+                    value: filterWords, 
+                    onChanged: (bool? value) => setState(() {
+                      value ??= true;
+                      filterWords = value!; 
+                    })
+                  ),
+                  Text("Only allow key nouns/verbs as blanks")
+                ],
+              ),
             ),
           ],
         )
@@ -211,21 +729,22 @@ class _FlashcardPageState extends State<FlashcardPage> {
 
   List<String> parseBERT(String topic, String text){
 
-    final wordRegex = RegExp(r'\S+');
+    final wordRegex = RegExp(r'\b\w+\b');
     final matches = wordRegex.allMatches(text);
     List<RegExpMatch> words = [];
 
-    List<String> filler = ['just','defined','by','where','do','means',':',')','(','\n','is','for','and','nor','but','or','yet','so','the','a','an','no','i','you','she','he','it','we','they','me','you','him','her','it','us','them','mine','yours','his','hers','its','ours','theirs','my','your','his','her','its','our','their','myself','yourself','himself','herself','itself','oneself','ourselves','yourselves','themselves','this','that','these','those','such','neither','who','whom','whose','which','that','whoever','whomever','whichever','whatever','who','whom','whose','what','which','whatever','another','anybody','anyone','anything','each','either','everybody','everyone','everything','much','neither','nobody','somebody','someone','somethings','in','on','at','by','for','with','about','against','between','into','through','during','before','after','above','below','about','across','during','exept','since','against','for','than','along','from','through','among','in','to','around','toward','as','into','at','like','of','until','onto','via','with','by'];
+    List<String> filler = ['maybe','could','are','just','defined','by','where','do','means',':',')','(','\n','is','for','and','nor','but','or','yet','so','the','a','an','no','i','you','she','he','it','we','they','me','you','him','her','it','us','them','mine','yours','his','hers','its','ours','theirs','my','your','his','her','its','our','their','myself','yourself','himself','herself','itself','oneself','ourselves','yourselves','themselves','this','that','these','those','such','neither','who','whom','whose','which','that','whoever','whomever','whichever','whatever','who','whom','whose','what','which','whatever','another','anybody','anyone','anything','each','either','everybody','everyone','everything','much','neither','nobody','somebody','someone','somethings','in','on','at','by','for','with','about','against','between','into','through','during','before','after','above','below','about','across','during','exept','since','against','for','than','along','from','through','among','in','to','around','toward','as','into','at','like','of','until','onto','via','with','by'];
 
     for(final match in matches){
-      if(!filler.contains(match.group(0)!.toLowerCase())){
+      if(!filterWords || !filler.contains(match.group(0)!.toLowerCase())){
         words.add(match);
       }
+
     }
 
     int ans = random.nextInt(words.length);
     
-    String front = topic + "\n" + text.substring(0,words[ans].start);
+    String front = "$topic\n${text.substring(0,words[ans].start)}";
     String answer = words[ans].group(0)!;
     String back = text.substring(words[ans].end);
 
