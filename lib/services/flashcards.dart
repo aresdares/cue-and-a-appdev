@@ -8,562 +8,111 @@ import '../databases/database.dart';
 import 'dart:math';
 
 class FlashcardPage extends StatefulWidget {
-  const new({super.key});
+  const new({super.key, required this.noteid});
+
+  final String noteid;
 
   @override
   State<FlashcardPage> createState() => _FlashcardPageState();
 }
 
 class _FlashcardPageState extends State<FlashcardPage> {
-  
+
+  String msg = "Loading...";
+
   final random = Random();
 
   // FOR TESTING PURPOSES placeholder content item.
   // I need to replace this with getting contentitems from Firebase.
-  final content = [
-    ContentItem(id:"1",noteId:"A",topic:"Grid World",information:"A maze-like problem"),
-    ContentItem(id:"2",noteId:"A",topic:"Grid World",information:"Noisy movement: actions do not always go as planned"),
-    ContentItem(id:"3",noteId:"A",topic:"Grid World",information:"The agent receives rewards each time step"),
-    ContentItem(id:"4",noteId:"A",topic:"Grid World",information:"Goal: maximize sum of rewards"),
-    ContentItem(id:"5",noteId:"A",topic:"Markov Decision Process",information:"An MDP is defined by: \n- A set of states s\n- A set of actions a\n- A transition function T(s, a, s')\n- A reward function R(s, a, s')\n- A start state s_0\n- Maybe a terminal state"),
-    ContentItem(id:"6",noteId:"A",topic:"Markov Decision Process",information:"are non-deterministic search problems"),
-    ContentItem(id:"7",noteId:"A",topic:"Markov",information:"generally means that given the present state, the future and the past are independent"),
-    ContentItem(id:"8",noteId:"A",topic:"Markov",information:"for Markov decision processes, means an action outcoms depend only on the current state"),
-    ContentItem(id:"9",noteId:"A",topic:"Markov",information:"This is just like search where the successor function could only depend on the current state (not the history)"),
-  ];
-  
+    // final content = [
+    //   ContentItem(id:"1",noteId:"A",topic:"Grid World",information:"A maze-like problem"),
+    //   ContentItem(id:"2",noteId:"A",topic:"Grid World",information:"Noisy movement: actions do not always go as planned"),
+    //   ContentItem(id:"3",noteId:"A",topic:"Grid World",information:"The agent receives rewards each time step"),
+    //   ContentItem(id:"4",noteId:"A",topic:"Grid World",information:"Goal: maximize sum of rewards"),
+    //   ContentItem(id:"5",noteId:"A",topic:"Markov Decision Process",information:"An MDP is defined by: \n- A set of states s\n- A set of actions a\n- A transition function T(s, a, s')\n- A reward function R(s, a, s')\n- A start state s_0\n- Maybe a terminal state"),
+    //   ContentItem(id:"6",noteId:"A",topic:"Markov Decision Process",information:"are non-deterministic search problems"),
+    //   ContentItem(id:"7",noteId:"A",topic:"Markov",information:"generally means that given the present state, the future and the past are independent"),
+    //   ContentItem(id:"8",noteId:"A",topic:"Markov",information:"for Markov decision processes, means an action outcomes depend only on the current state"),
+    //   ContentItem(id:"9",noteId:"A",topic:"Markov",information:"This is just like search where the successor function could only depend on the current state (not the history)"),
+    // ];
+
+  //String uid = "ARLMJ9M6YKUD6HgqY29mN0bSIbD2"; 
+  User? user;
+  String? uid, noteid;
+
   bool flashcard = false; // Will get this bool from dashboard or note page
-  String currentNote = "A"; // Will get this noteId String from button in dashboard page or note page when merged
+  //String noteid = "pVAR4EdsMejEHzWoqihN"; // Will get this noteId String from button in dashboard page or note page when merged
+  
   List<ContentItem> noteContent = [];
   List<ContentItem> cardContent = [];
   List<String> blankedInfo = [];
   bool filterWords = true;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  // DEBUG text to see what's in cardContent
+  String cards = "";
+
+  Future<void> getContents() async {
+    user = FirebaseAuth.instance.currentUser;
+    uid = user?.uid;
+    noteid = widget.noteid;
+
+    // DEBUG UID FOR TESTING PURPOSES
+    uid = "ARLMJ9M6YKUD6HgqY29mN0bSIbD2";
+
+    if(uid == null){
+      setState(() => {msg = "User not logged in."});
+      return;
+    } else{
+      print(uid);
+    }
+    
+    final querySnapshot = await FirebaseFirestore.instance.collection('users').doc(uid).collection('notes').doc(widget.noteid).collection("contents").get().timeout(const Duration(seconds: 10));
+
+    print("hi");
+    if(querySnapshot.size > 0){
+      for(var doc in querySnapshot.docs) {
+        noteContent!.add(ContentItem.fromMap(doc.data(), doc.id));
+      }
+    }
+    print("bye");
+    if(noteContent!.isEmpty){
+      print("i");
+      setState(() => {msg = "Note not found."});
+      return;
+    }else{
+      print("o");
+    }
+    print("hi");
+
+    print(noteContent.length);
+    getCards();
+  }
 
   final TextEditingController blankController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    
+    getContents();
+  }
+
+  @override
   Widget build(BuildContext context) {
-
-    // Gets all content under the note being viewed
-    noteContent = filterContent(content, note:currentNote);
-
-    // Gets all content with the lowest score in the note
-    if(cardContent.isEmpty){
-      int? minScore = getMinScore(noteContent);
-      cardContent = filterContent(noteContent,score: minScore);
-      cardContent.shuffle();
+    if(noteContent.isEmpty || cards.isEmpty){
+      return Scaffold(
+        body: Center(child: Text(msg),)
+      );
     }
 
-    // DEBUG text to see what's in cardContent
-    String cards = "";
-    for(final card in noteContent){
-      cards += "${card.topic} ${card.score}\n";
+
+    if(cardContent.isEmpty){
+      return Scaffold(
+        body: Center(child: Text("Note is empty."),)
+      );
     }
 
     if(flashcard){
-
       // FLASHCARD FRONTEND
       return Scaffold( body:Center(
         child:Column(
@@ -640,11 +189,11 @@ class _FlashcardPageState extends State<FlashcardPage> {
   }
 
 
-  List<ContentItem> filterContent(List<ContentItem> content,{String? note, int? score}){
+  List<ContentItem> filterContent(List<ContentItem> content,{int? score}){
     List<ContentItem> filtered = [];
 
     for(final item in content){
-      if((note != null && item.noteId == note) || (note==null && item.score == score)){
+      if (score != null && item.score == score){
         filtered.add(item);
       }
     }
@@ -665,16 +214,19 @@ class _FlashcardPageState extends State<FlashcardPage> {
   }
 
 
-  void nextContent(int bonus){
+  void nextContent(int bonus) async {
     try{
       // FOR TESTING PURPOSES I made the score not final and I change it directly. 
       // This should be changed when I implement the firebase stuff.
-      cardContent[0].score += bonus;
+
+      FirebaseFirestore.instance.collection('users').doc(uid).collection('notes').doc(widget.noteid).collection("contents").doc(cardContent[0].id).update({"score": cardContent[0].score + bonus});
+      
+      final c = await FirebaseFirestore.instance.collection('users').doc(uid).collection('notes').doc(widget.noteid).collection("contents").doc(cardContent[0].id).get().timeout(const Duration(seconds: 10));
+      cardContent[0].score = ContentItem.fromMap(c.data()!,c.id).score;
       cardContent.removeAt(0);
+      
 
-      setState(() {
-
-      });
+      getCards();
     }catch(e){}
   }
 
@@ -700,13 +252,11 @@ class _FlashcardPageState extends State<FlashcardPage> {
   void checkBlank() {
     final ans = blankController.text.trim().toLowerCase();
     blankController.text = "";
-    setState(() {
-      if (ans == blankedInfo[1]) {
-        nextContent(1);
-      } else {
-        nextContent(-1);
-      }
-    });
+    if (ans == blankedInfo[1]) {
+      nextContent(1);
+    } else {
+      nextContent(-1);
+    }
   }
 
   Widget blankInfo(String topic,String text){
@@ -750,6 +300,32 @@ class _FlashcardPageState extends State<FlashcardPage> {
 
     List<String> parsed = [front,answer,back];
     return parsed;
+  }
+
+  Future<void> getCards() async {
+
+    
+    // Gets all content under the note being viewed
+    noteContent;
+
+    // Gets all content with the lowest score in the note
+    if(cardContent.isEmpty){
+      int? minScore = getMinScore(noteContent);
+      cardContent = filterContent(noteContent,score: minScore);
+      cardContent.shuffle();
+    }
+
+
+
+    String str = "";
+
+    for (final card in noteContent){
+      str += "${card.topic} ${card.score}\n";
+    }
+
+    cards = str;
+    setState(() {
+    });
   }
 
 }

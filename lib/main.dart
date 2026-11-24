@@ -21,7 +21,7 @@ class FirebaseTestApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       //home: const ConnectionTestScreen(),
-      home: const FlashcardPage(),
+      home: FlashcardPage(noteid: "pVAR4EdsMejEHzWoqihN"),
     );
   }
 }
