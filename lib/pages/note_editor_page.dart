@@ -16,11 +16,30 @@ class NoteEditorPage extends StatefulWidget{
 //    an updated version of title and content list
 
 class _NoteEditorPage() extends State<NoteEditorPage>{
+  //  controller for title
   final NoteEditor editor = NoteEditor();
-
   final TextEditingController titleController=TextEditingController();
+  
+  //  controllers for note input
   final TextEditingController topicController=TextEditingController();
   final TextEditingController infoController=TextEditingController();
+
+  //  focus nodes: control which textfield has the cursor thing
+  final FocusNode topicFocus = FocusNode();
+  final FocusNode infoFocus = FocusNode();
+
+  bool hasCreatedInitialRow = false;
+
+  //  dispose
+  @override
+  void dispose(){
+    titleController.dispose();
+    topicController.dispose();
+    infoController.dispose();
+    topicFocus.dispose();
+    infoFocus.dispose();
+    super.dispose();
+  }
 
   Widget build(BuildContext context){
     return Scaffold(
@@ -76,7 +95,8 @@ class _NoteEditorPage() extends State<NoteEditorPage>{
               height: 32,
             ),
 
-            //  INPUT TOPIC
+            //  removing for now: 
+            /*//  INPUT TOPIC
             TextField(
               controller: topicController,
               decoration: InputDecoration(
@@ -90,7 +110,7 @@ class _NoteEditorPage() extends State<NoteEditorPage>{
               decoration: InputDecoration(
                 hintText: 'Information'
               ),
-            ),
+            ),*/
   
             Divider(
               height: 32,
@@ -133,9 +153,17 @@ class _NoteEditorPage() extends State<NoteEditorPage>{
                     return Text('Loading rows...');
                   }
           
-                  List<ContentItem> rows=snapshot.data!;
+                  List<ContentItem>rows=snapshot.data!;
                   if(rows.isEmpty){
-                    return Text('No rows yet.');
+                    if(!hasCreatedInitialRow){
+                      hasCreatedInitialRow=true;
+                      editor.addContentRow(
+                        noteId: widget.noteId
+                      ).then((_){
+                        hasCreatedInitialRow=false;
+                      });
+                    }
+                    return Text('Creating first row...');
                   }
 
                   //  creates scrollable list for rows
