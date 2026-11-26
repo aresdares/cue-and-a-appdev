@@ -18,23 +18,10 @@ class FlashcardPage extends StatefulWidget {
 
 class _FlashcardPageState extends State<FlashcardPage> {
 
+  String titleText = "Flashcards";
   String msg = "Loading...";
 
   final random = Random();
-
-  // FOR TESTING PURPOSES placeholder content item.
-  // I need to replace this with getting contentitems from Firebase.
-    // final content = [
-    //   ContentItem(id:"0",noteId:"A",topic:"Grid World",information:"A maze-like problem"),
-    //   ContentItem(id:"1",noteId:"A",topic:"Grid World",information:"Noisy movement: actions do not always go as planned"),
-    //   ContentItem(id:"2",noteId:"A",topic:"Grid World",information:"The agent receives rewards each time step"),
-    //   ContentItem(id:"3",noteId:"A",topic:"Grid World",information:"Goal: maximize sum of rewards"),
-    //   ContentItem(id:"4",noteId:"A",topic:"Markov Decision Process",information:"is defined by: \n- A set of states s\n- A set of actions a\n- A transition function T(s, a, s')\n- A reward function R(s, a, s')\n- A start state s_0\n- Maybe a terminal state"),
-    //   ContentItem(id:"5",noteId:"A",topic:"Markov Decision Process",information:"are non-deterministic search problems"),
-    //   ContentItem(id:"6",noteId:"A",topic:"Markov",information:"generally means that given the present state, the future and the past are independent"),
-    //   ContentItem(id:"7",noteId:"A",topic:"Markov",information:"for Markov decision processes, means an action outcomes depend only on the current state"),
-    //   ContentItem(id:"8",noteId:"A",topic:"Markov",information:"This is just like search where the successor function could only depend on the current state (not the history)"),
-    // ];
 
   //String uid = "ARLMJ9M6YKUD6HgqY29mN0bSIbD2"; 
   User? user;
@@ -49,16 +36,20 @@ class _FlashcardPageState extends State<FlashcardPage> {
   List<ContentItem> previousCardContent = [];
   List<String> blankedInfo = [];
   bool filterWords = true;
+  final TextEditingController blankController = TextEditingController();
+  String cardText = "";
+  bool showtopic = false;
 
   // DEBUG text to see what's in cardContent
   String cards = "";
+
 
   Future<void> getContents() async {
     user = FirebaseAuth.instance.currentUser;
     uid = user?.uid;
     noteid = widget.noteid;
 
-    // DEBUG UID FOR TESTING PURPOSES
+    // DEBUG UID FOR TESTING PURPOSES. DELETE TO TEST REAL AUTH
     uid = "ARLMJ9M6YKUD6HgqY29mN0bSIbD2";
 
     if(uid == null){
@@ -83,12 +74,12 @@ class _FlashcardPageState extends State<FlashcardPage> {
     getCards();
   }
 
-  final TextEditingController blankController = TextEditingController();
+
+
 
   @override
   void initState() {
     super.initState();
-    
     getContents();
   }
 
@@ -110,7 +101,7 @@ class _FlashcardPageState extends State<FlashcardPage> {
     if(flashcard){
       return flashCards();
     } else {
-      return blanksQuiz()
+      return blanksQuiz();
     }
   }
 
@@ -122,11 +113,13 @@ class _FlashcardPageState extends State<FlashcardPage> {
       child:Column(
         children: [
           menuButton(),
+          backButton(),
+          pfpButton(),
           quizTypeToggleButton(),
           shuffleToggleButton(),
-          Text("\n$cards"), // DEBUG
+          // Text("\n$cards"), // DEBUG
           flashCardWidget(),
-          Text("\n[DEBUG] score: ${cardContent[0].score}\n"), // DEBUG
+          // Text("\n[DEBUG] score: ${cardContent[0].score}\n"), // DEBUG
           wrongFlashCardButton(),
           correctFlashCardButton(),
         ],
@@ -145,7 +138,7 @@ class _FlashcardPageState extends State<FlashcardPage> {
           Text("Fill in the Blanks"),
           pfpButton(),
           quizTypeToggleButton(),
-          Text("\n$cards"), // DEBUG
+          // Text("\n$cards"), // DEBUG
           blankInfo(cardContent[0].topic,cardContent[0].information),
           Text("\n[DEBUG] answer: ${blankedInfo[1]}\n"), // DEBUG
           checkAnswerButton(),
@@ -155,23 +148,30 @@ class _FlashcardPageState extends State<FlashcardPage> {
     ));
   }
 
+  Appbar appBarBuilder(){
+    return Appbar(
+      title: titleText,
+    );
+  }
+
+
   // Menu Button
   Widget menuButton(){
     return IconButton(
-      icon: const Icon(Icons.menu_rounded)
+      icon: const Icon(Icons.menu_rounded),
       onPressed: () => setState(() {
         // menu function
       })
-    )
+    );
   }
 
 
   // Back button meant for appbar
   Widget backButton(){
     return IconButton(
-      icon: const Icon(Icons.arrow_back_rounded)
+      icon: const Icon(Icons.arrow_back_rounded),
       onPressed: () => setState(() {
-        Navigator.pop();
+        Navigator.pop(context);
       })
     );
   }
@@ -195,29 +195,44 @@ class _FlashcardPageState extends State<FlashcardPage> {
 
   // TOGGLE BUTTON
   Widget quizTypeToggleButton(){
+    String buttonText = "F | [B]";
+    if(flashcard){
+      buttonText = "[F] | B";
+    }
+
     return ElevatedButton(
       onPressed: () => setState(() {
         flashcard = !flashcard;
       }), 
-      child: Text("[F] | B")
+      child: Text(buttonText)
     );
   }
 
 
-  Widget shuffleToggleButton{
+  Widget shuffleToggleButton(){
     return ElevatedButton(
       onPressed: () => setState(() {
         shuffle = !shuffle;
       }), 
-      child: Text("Shuffle") // add shuffle icon
+      child: Text("Shuffle${shuffle?" ON":" OFF"}") // add shuffle icon
     );
   }
 
 
   // The Flashcard itself
   Widget flashCardWidget(){
-    return ElevatedButton();
-    // Code for this is on my laptop.
+    return ElevatedButton(
+      onPressed: () => setState(() {
+        if(!showtopic){
+          cardText = cardContent[0].topic;
+          showtopic = true;
+        } else {
+          cardText = cardContent[0].information;
+          showtopic = false;
+        }
+      }), 
+      child: Text(cardText)
+    );
   }
 
 
@@ -281,15 +296,13 @@ class _FlashcardPageState extends State<FlashcardPage> {
 
 
 
-
-
-
-
   @override
   void dispose() {
     blankController.dispose();
     super.dispose();
   }
+
+
 
 
   List<ContentItem> filterContent(List<ContentItem> content,{int? score}){
@@ -302,6 +315,8 @@ class _FlashcardPageState extends State<FlashcardPage> {
     }
     return filtered;
   }
+
+
 
 
   int? getMinScore(List<ContentItem> content){
@@ -317,6 +332,8 @@ class _FlashcardPageState extends State<FlashcardPage> {
   }
 
 
+
+
   void nextContent(int bonus) async {
     try{
       FirebaseFirestore.instance.collection('users').doc(uid).collection('notes').doc(widget.noteid).collection("contents").doc(cardContent[0].id).update({"score": cardContent[0].score + bonus});
@@ -329,6 +346,8 @@ class _FlashcardPageState extends State<FlashcardPage> {
       getCards();
     }catch(e){}
   }
+
+
 
   // QUIZ FUNCTIONS
 
@@ -349,6 +368,8 @@ class _FlashcardPageState extends State<FlashcardPage> {
     );
   }
 
+
+
   void checkBlank() {
     final ans = blankController.text.trim().toLowerCase();
     blankController.text = "";
@@ -358,6 +379,8 @@ class _FlashcardPageState extends State<FlashcardPage> {
       nextContent(-1);
     }
   }
+
+
 
   Widget blankInfo(String topic,String text){
     blankedInfo = parseBERT(topic, text);
@@ -377,13 +400,15 @@ class _FlashcardPageState extends State<FlashcardPage> {
     );
   }
 
+
+
   List<String> parseBERT(String topic, String text){
 
     final wordRegex = RegExp(r'\b\w+\b');
     final matches = wordRegex.allMatches(text);
     List<RegExpMatch> words = [];
 
-    List<String> filler = ['maybe','could','are','just','defined','by','where','do','means',':',')','(','\n','is','for','and','nor','but','or','yet','so','the','a','an','no','i','you','she','he','it','we','they','me','you','him','her','it','us','them','mine','yours','his','hers','its','ours','theirs','my','your','his','her','its','our','their','myself','yourself','himself','herself','itself','oneself','ourselves','yourselves','themselves','this','that','these','those','such','neither','who','whom','whose','which','that','whoever','whomever','whichever','whatever','who','whom','whose','what','which','whatever','another','anybody','anyone','anything','each','either','everybody','everyone','everything','much','neither','nobody','somebody','someone','somethings','in','on','at','by','for','with','about','against','between','into','through','during','before','after','above','below','about','across','during','exept','since','against','for','than','along','from','through','among','in','to','around','toward','as','into','at','like','of','until','onto','via','with','by'];
+    List<String> filler = ['maybe','could','are','just','defined','by','where','do','means',':',')','(','\n','is','for','and','nor','but','or','yet','so','the','a','an','no','i','you','she','he','it','we','they','me','you','him','her','it','us','them','mine','yours','his','hers','its','ours','theirs','my','your','his','her','its','our','their','myself','yourself','himself','herself','itself','oneself','ourselves','yourselves','themselves','this','that','these','those','such','neither','who','whom','whose','which','that','whoever','whomever','whichever','whatever','who','whom','whose','what','which','whatever','another','anybody','anyone','anything','each','either','everybody','everyone','everything','much','neither','nobody','somebody','someone','somethings','in','on','at','by','for','with','about','against','between','into','through','during','before','after','above','below','about','across','during','except','since','against','for','than','along','from','through','among','in','to','around','toward','as','into','at','like','of','until','onto','via','with','by'];
 
     for(final match in matches){
       if(!filterWords || !filler.contains(match.group(0)!.toLowerCase())){
@@ -402,6 +427,8 @@ class _FlashcardPageState extends State<FlashcardPage> {
     return parsed;
   }
 
+
+
   Future<void> getCards() async {
 
     
@@ -416,8 +443,9 @@ class _FlashcardPageState extends State<FlashcardPage> {
         cardContent.shuffle();
       }
     }
-
-
+    
+    cardText = cardContent[0].information;
+    showtopic = false;
 
     String str = "";
 

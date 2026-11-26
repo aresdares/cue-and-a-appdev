@@ -24,6 +24,7 @@ class FirebaseTestApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       //home: const ConnectionTestScreen(),
       home: FlashcardPage(noteid: "pVAR4EdsMejEHzWoqihN"),
+      //home: NoteEditorTestScreen()
     );
   }
 }
