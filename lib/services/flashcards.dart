@@ -8,8 +8,9 @@ import '../databases/database.dart';
 import 'dart:math';
 
 class FlashcardPage extends StatefulWidget {
-  const new({super.key, required this.noteid});
+  new({super.key, required this.noteid});
 
+  final random = Random();
   final String noteid;
 
   @override
@@ -20,8 +21,6 @@ class _FlashcardPageState extends State<FlashcardPage> {
 
   String titleText = "Flashcards";
   String msg = "Loading...";
-
-  final random = Random();
 
   //String uid = "ARLMJ9M6YKUD6HgqY29mN0bSIbD2"; 
   User? user;
@@ -99,8 +98,10 @@ class _FlashcardPageState extends State<FlashcardPage> {
     }
 
     if(flashcard){
+      titleText = "Flashcards";
       return flashCards();
     } else {
+      titleText = "Fill in the Blanks";
       return blanksQuiz();
     }
   }
@@ -109,34 +110,33 @@ class _FlashcardPageState extends State<FlashcardPage> {
   // FLASHCARD FRONTEND
   Widget flashCards(){
     return Scaffold( 
+      appBar: appBarBuilder(),
+      drawer: drawerBuilder(),
       body:Center(
-      child:Column(
-        children: [
-          menuButton(),
-          backButton(),
-          pfpButton(),
-          quizTypeToggleButton(),
-          shuffleToggleButton(),
-          // Text("\n$cards"), // DEBUG
-          flashCardWidget(),
-          // Text("\n[DEBUG] score: ${cardContent[0].score}\n"), // DEBUG
-          wrongFlashCardButton(),
-          correctFlashCardButton(),
-        ],
+        child:Column(
+          children: [
+            quizTypeToggleButton(),
+            shuffleToggleButton(),
+            // Text("\n$cards"), // DEBUG
+            flashCardWidget(),
+            // Text("\n[DEBUG] score: ${cardContent[0].score}\n"), // DEBUG
+            wrongFlashCardButton(),
+            correctFlashCardButton(),
+          ],
+        )
       )
-    ));
+    );
   }
 
 
   // QUIZ FRONTEND
   Widget blanksQuiz(){
-    return Scaffold( body:Center(
+    return Scaffold( 
+      appBar: appBarBuilder(),
+      drawer: drawerBuilder(),
+      body:Center(
       child:Column(
         children: [
-          menuButton(),
-          backButton(),
-          Text("Fill in the Blanks"),
-          pfpButton(),
           quizTypeToggleButton(),
           // Text("\n$cards"), // DEBUG
           blankInfo(cardContent[0].topic,cardContent[0].information),
@@ -148,19 +148,58 @@ class _FlashcardPageState extends State<FlashcardPage> {
     ));
   }
 
-  Appbar appBarBuilder(){
-    return Appbar(
-      title: titleText,
+  AppBar appBarBuilder(){
+    return AppBar(
+      title: Text(titleText),
+      centerTitle: true,
+      leadingWidth: 100,
+      leading: Row(
+        children: [
+          Builder(
+            builder: (context) {
+              return menuButton(context);
+            },
+            
+          ),
+          backButton()
+        ]
+      ),
+      actions: <Widget>[
+        pfpButton()
+      ]
     );
   }
 
+  Drawer drawerBuilder(){
+    return Drawer(
+      child: ListView(
+        children:[
+          DrawerHeader(
+            child: Text("Menu"),
+          ),
+          ElevatedButton(
+            onPressed: () => {}, 
+            child: Text("Settings"),
+          ),
+          ElevatedButton(
+            onPressed: () => {}, 
+            child: Text("Settings"),
+          ),
+          ElevatedButton(
+            onPressed: () => {}, 
+            child: Text("Settings"),
+          ),
+        ]
+      )
+    );
+  }
 
   // Menu Button
-  Widget menuButton(){
+  Widget menuButton(context){
     return IconButton(
       icon: const Icon(Icons.menu_rounded),
       onPressed: () => setState(() {
-        // menu function
+        Scaffold.of(context).openDrawer();
       })
     );
   }
@@ -178,17 +217,34 @@ class _FlashcardPageState extends State<FlashcardPage> {
 
   // PFP button meant for appbar
   Widget pfpButton(){
-    return InkWell(
-      customBorder: const CircleBorder(),
-      onTap: () {
-        // profile picture function
-      },
-    child: const CircleAvatar(
-      radius: 24, // ADJUST FOR FRONTEND
-      backgroundImage: NetworkImage('https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png?utm_source=commons.wikimedia.org&utm_campaign=index&utm_content=thumbnail_unscaled'), // PLACEHOLDER
-      backgroundColor: Colors.grey,
-    ),
-  );
+    return PopupMenuButton(
+      onSelected: (item) {},
+      itemBuilder: (BuildContext context) => <PopupMenuEntry>[
+        const PopupMenuItem(
+          value: 0,
+          child: ListTile(
+            title: Text('Profile'),
+          ),
+        ),
+        const PopupMenuItem(
+          value: 1,
+          child: ListTile(
+            title: Text('Other stuff'),
+          ),
+        ),
+        const PopupMenuDivider(),
+        const PopupMenuItem(
+          child: ListTile(
+            title: Text('Logout'),
+          ),
+        ),
+      ],
+      child: const CircleAvatar(
+        radius: 24, // ADJUST FOR FRONTEND
+        backgroundImage: NetworkImage('https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png?utm_source=commons.wikimedia.org&utm_campaign=index&utm_content=thumbnail_unscaled'), // PLACEHOLDER
+        backgroundColor: Colors.grey,
+      ),
+    );
   }
 
 
@@ -383,8 +439,6 @@ class _FlashcardPageState extends State<FlashcardPage> {
 
 
   Widget blankInfo(String topic,String text){
-    blankedInfo = parseBERT(topic, text);
-
     return Text.rich(
       TextSpan(
         children: [
@@ -417,7 +471,7 @@ class _FlashcardPageState extends State<FlashcardPage> {
 
     }
 
-    int ans = random.nextInt(words.length);
+    int ans = widget.random.nextInt(words.length);
     
     String front = "$topic\n${text.substring(0,words[ans].start)}";
     String answer = words[ans].group(0)!;
@@ -452,6 +506,8 @@ class _FlashcardPageState extends State<FlashcardPage> {
     for (final card in noteContent){
       str += "${card.topic} ${card.score}\n";
     }
+
+    blankedInfo = parseBERT(cardContent[0].topic, cardContent[0].information);
 
     cards = str;
     setState(() {
