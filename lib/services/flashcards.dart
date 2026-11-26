@@ -4,14 +4,18 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../firebase_options.dart';
 import '../databases/database.dart';
+import './ui_builder.dart';
 
+import '../main.dart';
 import 'dart:math';
 
 class FlashcardPage extends StatefulWidget {
-  new({super.key, required this.noteid});
+  new({super.key, required this.usersettings, required this.noteid, required this.flashcard});
 
   final random = Random();
   final String noteid;
+  final bool flashcard;
+  final UserSettings usersettings;
 
   @override
   State<FlashcardPage> createState() => _FlashcardPageState();
@@ -25,16 +29,14 @@ class _FlashcardPageState extends State<FlashcardPage> {
   //String uid = "ARLMJ9M6YKUD6HgqY29mN0bSIbD2"; 
   User? user;
   String? uid, noteid;
-
-  bool flashcard = false; // Will get this bool from dashboard or note page
-  bool shuffle = true;
+  
+  bool? flashcard;
   //String noteid = "pVAR4EdsMejEHzWoqihN"; // Will get this noteId String from button in dashboard page or note page when merged
   
   List<ContentItem> noteContent = [];
   List<ContentItem> cardContent = [];
   List<ContentItem> previousCardContent = [];
   List<String> blankedInfo = [];
-  bool filterWords = true;
   final TextEditingController blankController = TextEditingController();
   String cardText = "";
   bool showtopic = false;
@@ -79,14 +81,18 @@ class _FlashcardPageState extends State<FlashcardPage> {
   @override
   void initState() {
     super.initState();
+    flashcard = widget.flashcard;
     getContents();
   }
 
   @override
   Widget build(BuildContext context) {
+    print("hi");
     if(noteContent.isEmpty || cards.isEmpty){
       return Scaffold(
-        body: Center(child: Text(msg),)
+        appBar: UiBuilder.appBarBuilder(this,titleText),
+        drawer: UiBuilder.drawerBuilder(this),
+        body: Center(child: Text(msg))
       );
     }
 
@@ -97,7 +103,7 @@ class _FlashcardPageState extends State<FlashcardPage> {
       );
     }
 
-    if(flashcard){
+    if(flashcard??widget.flashcard){
       titleText = "Flashcards";
       return flashCards();
     } else {
@@ -109,170 +115,60 @@ class _FlashcardPageState extends State<FlashcardPage> {
 
   // FLASHCARD FRONTEND
   Widget flashCards(){
-    return Scaffold( 
-      appBar: appBarBuilder(),
-      drawer: drawerBuilder(),
-      body:Center(
+    return Scaffold(
+        appBar: UiBuilder.appBarBuilder(this,titleText),
+        drawer: UiBuilder.drawerBuilder(this),
+        body: Center(
+          child:Column(
+            children: [
+              quizTypeToggleButton(),
+              // Text("\n$cards"), // DEBUG
+              flashCardWidget(),
+              // Text("\n[DEBUG] score: ${cardContent[0].score}\n"), // DEBUG
+              wrongFlashCardButton(),
+              correctFlashCardButton(),
+            ],
+          )
+        )
+      );
+  }
+
+
+  // QUIZ FRONTEND
+  Widget blanksQuiz(){
+    return Scaffold(
+        appBar: UiBuilder.appBarBuilder(this,titleText),
+        drawer: UiBuilder.drawerBuilder(this),
+        body: Center(
         child:Column(
           children: [
             quizTypeToggleButton(),
-            shuffleToggleButton(),
             // Text("\n$cards"), // DEBUG
-            flashCardWidget(),
-            // Text("\n[DEBUG] score: ${cardContent[0].score}\n"), // DEBUG
-            wrongFlashCardButton(),
-            correctFlashCardButton(),
+            blankInfo(cardContent[0].topic,cardContent[0].information),
+            Text("\n[DEBUG] answer: ${blankedInfo[1]}, shuffle: ${widget.usersettings.shuffle}, filter: ${widget.usersettings.filterWords}\n"), // DEBUG
+            checkAnswerButton(),
           ],
         )
       )
     );
   }
 
-
-  // QUIZ FRONTEND
-  Widget blanksQuiz(){
-    return Scaffold( 
-      appBar: appBarBuilder(),
-      drawer: drawerBuilder(),
-      body:Center(
-      child:Column(
-        children: [
-          quizTypeToggleButton(),
-          // Text("\n$cards"), // DEBUG
-          blankInfo(cardContent[0].topic,cardContent[0].information),
-          Text("\n[DEBUG] answer: ${blankedInfo[1]}\n"), // DEBUG
-          checkAnswerButton(),
-          filterCheckBox()
-        ],
-      )
-    ));
-  }
-
-  AppBar appBarBuilder(){
-    return AppBar(
-      title: Text(titleText),
-      centerTitle: true,
-      leadingWidth: 100,
-      leading: Row(
-        children: [
-          Builder(
-            builder: (context) {
-              return menuButton(context);
-            },
-            
-          ),
-          backButton()
-        ]
-      ),
-      actions: <Widget>[
-        pfpButton()
-      ]
-    );
-  }
-
-  Drawer drawerBuilder(){
-    return Drawer(
-      child: ListView(
-        children:[
-          DrawerHeader(
-            child: Text("Menu"),
-          ),
-          ElevatedButton(
-            onPressed: () => {}, 
-            child: Text("Settings"),
-          ),
-          ElevatedButton(
-            onPressed: () => {}, 
-            child: Text("Settings"),
-          ),
-          ElevatedButton(
-            onPressed: () => {}, 
-            child: Text("Settings"),
-          ),
-        ]
-      )
-    );
-  }
-
-  // Menu Button
-  Widget menuButton(context){
-    return IconButton(
-      icon: const Icon(Icons.menu_rounded),
-      onPressed: () => setState(() {
-        Scaffold.of(context).openDrawer();
-      })
-    );
-  }
-
-
-  // Back button meant for appbar
-  Widget backButton(){
-    return IconButton(
-      icon: const Icon(Icons.arrow_back_rounded),
-      onPressed: () => setState(() {
-        Navigator.pop(context);
-      })
-    );
-  }
-
-  // PFP button meant for appbar
-  Widget pfpButton(){
-    return PopupMenuButton(
-      onSelected: (item) {},
-      itemBuilder: (BuildContext context) => <PopupMenuEntry>[
-        const PopupMenuItem(
-          value: 0,
-          child: ListTile(
-            title: Text('Profile'),
-          ),
-        ),
-        const PopupMenuItem(
-          value: 1,
-          child: ListTile(
-            title: Text('Other stuff'),
-          ),
-        ),
-        const PopupMenuDivider(),
-        const PopupMenuItem(
-          child: ListTile(
-            title: Text('Logout'),
-          ),
-        ),
-      ],
-      child: const CircleAvatar(
-        radius: 24, // ADJUST FOR FRONTEND
-        backgroundImage: NetworkImage('https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png?utm_source=commons.wikimedia.org&utm_campaign=index&utm_content=thumbnail_unscaled'), // PLACEHOLDER
-        backgroundColor: Colors.grey,
-      ),
-    );
-  }
-
-
-
   // TOGGLE BUTTON
   Widget quizTypeToggleButton(){
     String buttonText = "F | [B]";
-    if(flashcard){
+    if(flashcard??widget.flashcard){
       buttonText = "[F] | B";
     }
 
     return ElevatedButton(
       onPressed: () => setState(() {
-        flashcard = !flashcard;
+        flashcard = !(flashcard??widget.flashcard);
       }), 
       child: Text(buttonText)
     );
   }
 
 
-  Widget shuffleToggleButton(){
-    return ElevatedButton(
-      onPressed: () => setState(() {
-        shuffle = !shuffle;
-      }), 
-      child: Text("Shuffle${shuffle?" ON":" OFF"}") // add shuffle icon
-    );
-  }
 
 
   // The Flashcard itself
@@ -294,17 +190,17 @@ class _FlashcardPageState extends State<FlashcardPage> {
 
   // Button for getting a flashcard wrong
   Widget wrongFlashCardButton(){
-    return ElevatedButton(
+    return IconButton(
       onPressed: () => nextContent(-1), 
-      child: Text("Got it wrong")
+      icon: Icon(Icons.close_rounded)
     );
   }
 
   // Button for getting a flashcard correct
   Widget correctFlashCardButton(){
-    return ElevatedButton(
+    return IconButton(
       onPressed: () => nextContent(1), 
-      child: Text("Got it right")
+      icon: Icon(Icons.check_rounded)
     );
   }
 
@@ -313,24 +209,6 @@ class _FlashcardPageState extends State<FlashcardPage> {
     return ElevatedButton(
       onPressed: () => checkBlank(), 
       child: Text("Check Answer")
-    );
-  }
-
-  Widget filterCheckBox(){
-    return SizedBox(
-      width:300, // ADJUST FOR FRONTEND
-      child:Row(
-        children: [
-          Checkbox(
-            value: filterWords, 
-            onChanged: (bool? value) => setState(() {
-              value ??= true;
-              filterWords = value!; 
-            })
-          ),
-          Text("Only allow key nouns/verbs as blanks")
-        ],
-      ),
     );
   }
 
@@ -465,7 +343,7 @@ class _FlashcardPageState extends State<FlashcardPage> {
     List<String> filler = ['maybe','could','are','just','defined','by','where','do','means',':',')','(','\n','is','for','and','nor','but','or','yet','so','the','a','an','no','i','you','she','he','it','we','they','me','you','him','her','it','us','them','mine','yours','his','hers','its','ours','theirs','my','your','his','her','its','our','their','myself','yourself','himself','herself','itself','oneself','ourselves','yourselves','themselves','this','that','these','those','such','neither','who','whom','whose','which','that','whoever','whomever','whichever','whatever','who','whom','whose','what','which','whatever','another','anybody','anyone','anything','each','either','everybody','everyone','everything','much','neither','nobody','somebody','someone','somethings','in','on','at','by','for','with','about','against','between','into','through','during','before','after','above','below','about','across','during','except','since','against','for','than','along','from','through','among','in','to','around','toward','as','into','at','like','of','until','onto','via','with','by'];
 
     for(final match in matches){
-      if(!filterWords || !filler.contains(match.group(0)!.toLowerCase())){
+      if(!widget.usersettings.filterWords || !filler.contains(match.group(0)!.toLowerCase())){
         words.add(match);
       }
 
@@ -493,7 +371,7 @@ class _FlashcardPageState extends State<FlashcardPage> {
     if(cardContent.isEmpty){
       int? minScore = getMinScore(noteContent);
       cardContent = filterContent(noteContent,score: minScore);
-      if(shuffle){
+      if(widget.usersettings.shuffle){
         cardContent.shuffle();
       }
     }
