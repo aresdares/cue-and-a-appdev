@@ -124,7 +124,7 @@ class _NoteEditorPage() extends State<NoteEditorPage>{
                 stream: editor.streamContentItems(widget.noteId), 
                 builder: ((context, snapshot) {
                   //  check for errors
-                  if(!snapshot.hasError){
+                  if(snapshot.hasError){
                     return Text('Something went wrong: ${snapshot.error}');
                   }
 
@@ -145,14 +145,51 @@ class _NoteEditorPage() extends State<NoteEditorPage>{
                       ContentItem item=rows[index];
 
                       return Column(
-                        crossAxisAlignment: .start,
+                        //crossAxisAlignment: .start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           //  placing as one text for now but just
                           //  use them when separating the topics from infos
                           Text('[${item.position}] ${item.topic} | ${item.information}'),
                           Row(
                             children: [
-                              
+
+                              //  BUTTON FOR INSERTING ABOVE THE NOTE
+                              ElevatedButton(
+                                onPressed: () async {
+                                  await editor.addContentRow(
+                                    noteId: widget.noteId,
+                                    topic: 'New topic',
+                                    information: 'New info',
+                                    position: item.position
+                                  );
+                                }, 
+                                child: Text('Insert Above')
+                              ),
+
+                              //  BUTTON FOR EDITING
+                              ElevatedButton(
+                                onPressed: () async {
+                                  await editor.updateContentRow(
+                                    noteId: widget.noteId,
+                                    contentId: item.id,
+                                    topic: '${topicController.text}',
+                                    information: '${infoController.text}'
+                                  );
+                                }, 
+                                child: Text('Edit')
+                              ),
+
+                              //  BUTTON FOR DELETING
+                              ElevatedButton(
+                                onPressed: () async {
+                                  await editor.deleteContentRow(
+                                    noteId: widget.noteId,
+                                    contentId: item.id
+                                  );
+                                }, 
+                                child: Text('Delete')
+                              ),
                             ],
                           ),
                         ],

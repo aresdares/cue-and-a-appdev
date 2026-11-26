@@ -127,6 +127,7 @@ class NoteEditor {
         topic: topic,
         information: information,
         score: 0,
+        position: position??contentList.length,
       );
 
       for(var content in contentList) {
