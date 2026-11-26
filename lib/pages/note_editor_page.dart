@@ -248,21 +248,99 @@ class _NoteEditorPage extends State<NoteEditorPage>{
                               children: [
                                 Expanded(
                                   child: TextField(
+                                    //  bind to its own controller and focus
                                     controller: topicController,
                                     focusNode: topicFocus,
                                     decoration: InputDecoration(
                                       hintText: 'Topic',
                                     ),
+                                    //  TO INFORMATION if double space
+                                    onChanged: (value)async{
+                                      if(value.endsWith('  ')){
+                                        //  erase the spaces
+                                        String cleanedTopic=value.substring(0, value.length-2);
+                                        //  set 
+                                        topicController.text=cleanedTopic;
+                                        topicController.selection=TextSelection
+                                        .collapsed(
+                                          offset: cleanedTopic.length
+                                        );
+
+                                        //  SAVE PROGRESS to firestore
+                                        await editor.updateContentRow(
+                                          noteId: widget.noteId, 
+                                          contentId: item.id, 
+                                          topic: cleanedTopic, 
+                                          information: infoController.text
+                                        );
+
+                                        //  jump cursor from Topic -> respective Info
+                                        infoFocus.requestFocus();
+                                      }
+                                    },
                                   ),
                                 ),
+                                
                                 SizedBox(width: 8),
+
                                 Expanded(
                                   child: TextField(
+                                    //  bind to its own controller and focus
                                     controller: infoController,
                                     focusNode: infoFocus,
                                     decoration: InputDecoration(
                                       hintText: 'Information',
                                     ),
+
+                                    //  NEXT TOPIC if double space
+                                    onChanged: (value)async{
+                                      if(value.endsWith('  ')){
+                                        //  erase the spaces
+                                        String cleanedInfo=value.substring(0, value.length-2);
+                                        //  set 
+                                        infoController.text=cleanedInfo;
+                                        infoController.selection=TextSelection
+                                        .collapsed(
+                                          offset: cleanedInfo.length
+                                        );
+
+                                        //  SAVE PROGRESS to firestore
+                                        await editor.updateContentRow(
+                                          noteId: widget.noteId, 
+                                          contentId: item.id, 
+                                          topic: topicController.text, 
+                                          information: cleanedInfo,
+                                        );
+
+                                        //  since we on diff row now, 
+                                        //  set active row id to: not this one
+                                        activeRowId=null;
+
+                                        //  two options: 
+                                        //  (1) if another row exists below, jump to its TOPIC
+                                        //  (2) if not, make a new one right below like QUIZLET and THEN 
+                                        //  jump to its TOPIC
+                                        if(index+1<rows.length){
+                                          await selectRowForEdit(rows[index+1]);
+                                        }else{
+                                          //  prepare id of new row
+                                          String newId=await editor.addContentRow(
+                                            noteId: widget.noteId,
+                                          );
+
+                                          setState(() {
+                                            activeRowId=newId;
+                                            topicController.clear();
+                                            infoController.clear();
+                                          });
+
+                                          //  focus
+                                          WidgetsBinding.instance.addPostFrameCallback((_){
+                                            topicFocus.requestFocus();
+                                          });
+                                        }
+                                      }
+                                    },
                                   ),
                                 ),
                               ],
