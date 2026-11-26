@@ -97,6 +97,9 @@ class ContentItem{
     final String topic; // LEFT column (cue/topic)
     final String information; // RIGHT column (info/definition)
     int score; // mastery score for Flashcard / Recall mode
+    int position; //  row order
+
+
 
     ContentItem({
         required this.id,
@@ -104,6 +107,7 @@ class ContentItem{
         required this.topic,
         required this.information,
         this.score = 0,
+        this.position=0,
     });
 
     Map<String,dynamic> toMap() {
@@ -112,6 +116,7 @@ class ContentItem{
             'topic': topic,
             'information': information,
             'score': score,
+            'position': position,
         };
     }
 
@@ -123,6 +128,7 @@ class ContentItem{
             topic: map['topic']??'',
             information: map['information']??'',
             score: map['score']??0,
+            position: map['position']??0,
         );
     }
 }

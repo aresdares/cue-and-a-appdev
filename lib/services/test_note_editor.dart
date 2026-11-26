@@ -27,7 +27,15 @@ class _NoteEditorTestScreenState extends State<NoteEditorTestScreen> {
     _setupTestEnvironment();
   }
 
-  // Ensures a user is logged in AND a parent Note document exists in Firestore
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _topicController.dispose();
+    _infoController.dispose();
+    super.dispose();
+  }
+
+  // Ensures a user is logged in AND a fresh parent Note document exists in Firestore
   Future<void> _setupTestEnvironment() async {
     try {
       // 1. Log in (or auto-register) a test account so currentUser! is never null
@@ -50,7 +58,7 @@ class _NoteEditorTestScreenState extends State<NoteEditorTestScreen> {
         }
       }
 
-      // 2. Create 1 dummy Note document so updateLastModified() has a doc to update
+      // 2. Create 1 fresh dummy Note document so updateLastModified() has a doc to update
       Note dummyNote = Note(
         id: '',
         notebookId: null,
@@ -136,7 +144,7 @@ class _NoteEditorTestScreenState extends State<NoteEditorTestScreen> {
                   const Divider(height: 28),
 
                   // ---------------------------------------------------
-                  // TEST 2: addContentRow()
+                  // TEST 2: addContentRow() — Append to Bottom (position: null)
                   // ---------------------------------------------------
                   Row(
                     children: [
@@ -170,18 +178,18 @@ class _NoteEditorTestScreenState extends State<NoteEditorTestScreen> {
                           _topicController.clear();
                           _infoController.clear();
                         },
-                        child: const Text('+ Row'),
+                        child: const Text('+ Append'),
                       ),
                     ],
                   ),
                   const SizedBox(height: 12),
                   const Text(
-                    'Live Cornell Rows:',
+                    'Live Cornell Rows (Ordered by Position):',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
 
                   // ---------------------------------------------------
-                  // TEST 3: streamContentItems() + update + delete
+                  // TEST 3: streamContentItems() + Insert Above + Edit + Delete
                   // ---------------------------------------------------
                   Expanded(
                     child: StreamBuilder<List<ContentItem>>(
@@ -208,13 +216,43 @@ class _NoteEditorTestScreenState extends State<NoteEditorTestScreen> {
                             ContentItem item = rows[index];
                             return Card(
                               child: ListTile(
+                                // Displays the Firestore 'position' field live
+                                leading: CircleAvatar(
+                                  backgroundColor: Colors.indigo.shade100,
+                                  child: Text(
+                                    '#${item.position}',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
                                 title: Text('Topic: ${item.topic}'),
                                 subtitle: Text('Info: ${item.information}'),
                                 trailing: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
+                                    // Test inserting in the middle (shifts this row +1)
+                                    IconButton(
+                                      tooltip: 'Insert row above #${item.position}',
+                                      icon: const Icon(
+                                        Icons.add_circle_outline,
+                                        color: Colors.green,
+                                      ),
+                                      onPressed: () async {
+                                        await _editor.addContentRow(
+                                          noteId: _testNoteId!,
+                                          topic:
+                                              'Inserted @ pos ${item.position}',
+                                          information:
+                                              'Pushed old #${item.position} down',
+                                          position: item.position,
+                                        );
+                                      },
+                                    ),
                                     // Test updateContentRow()
                                     IconButton(
+                                      tooltip: 'Edit row',
                                       icon: const Icon(Icons.edit,
                                           color: Colors.blue),
                                       onPressed: () async {
@@ -227,8 +265,9 @@ class _NoteEditorTestScreenState extends State<NoteEditorTestScreen> {
                                         );
                                       },
                                     ),
-                                    // Test deleteContentRow()
+                                    // Test deleteContentRow() (shifts rows below -1)
                                     IconButton(
+                                      tooltip: 'Delete row',
                                       icon: const Icon(Icons.delete,
                                           color: Colors.red),
                                       onPressed: () async {
