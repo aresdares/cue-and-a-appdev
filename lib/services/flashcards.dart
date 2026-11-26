@@ -41,10 +41,12 @@ class _FlashcardPageState extends State<FlashcardPage> {
   String? uid, noteid;
 
   bool flashcard = false; // Will get this bool from dashboard or note page
+  bool shuffle = true;
   //String noteid = "pVAR4EdsMejEHzWoqihN"; // Will get this noteId String from button in dashboard page or note page when merged
   
   List<ContentItem> noteContent = [];
   List<ContentItem> cardContent = [];
+  List<ContentItem> previousCardContent = [];
   List<String> blankedInfo = [];
   bool filterWords = true;
 
@@ -62,29 +64,22 @@ class _FlashcardPageState extends State<FlashcardPage> {
     if(uid == null){
       setState(() => {msg = "User not logged in."});
       return;
-    } else{
-      print(uid);
     }
     
     final querySnapshot = await FirebaseFirestore.instance.collection('users').doc(uid).collection('notes').doc(widget.noteid).collection("contents").get().timeout(const Duration(seconds: 10));
 
-    print("hi");
     if(querySnapshot.size > 0){
       for(var doc in querySnapshot.docs) {
         noteContent!.add(ContentItem.fromMap(doc.data(), doc.id));
       }
     }
-    print("bye");
+
     if(noteContent!.isEmpty){
-      print("i");
       setState(() => {msg = "Note not found."});
       return;
-    }else{
-      print("o");
     }
-    print("hi");
-
-    print(noteContent.length);
+    
+    noteContent.sort((a, b) => a.position.compareTo(b.position));
     getCards();
   }
 
@@ -113,73 +108,181 @@ class _FlashcardPageState extends State<FlashcardPage> {
     }
 
     if(flashcard){
-      // FLASHCARD FRONTEND
-      return Scaffold( body:Center(
-        child:Column(
-          children: [
-            ElevatedButton(
-              onPressed: () => setState(() {
-                flashcard = !flashcard;
-              }), 
-              child: Text("[F] | B")
-            ),
-            Text("\n$cards"),
-            Text(cardContent[0].topic),
-            Text(cardContent[0].information),
-            Text("\n[DEBUG] score: ${cardContent[0].score}\n"),
-            ElevatedButton(
-              onPressed: () => nextContent(-1), 
-              child: Text("Got it wrong")
-            ),
-            ElevatedButton(
-              onPressed: () => nextContent(1), 
-              child: Text("Got it right")
-            )
-          ],
-        )
-      ));
+      return flashCards();
     } else {
-
-      // QUIZ FRONTEND
-      return Scaffold( body:Center(
-        child:Column(
-          children: [
-            ElevatedButton(
-              onPressed: () => setState(() {
-                flashcard = !flashcard;
-              }), 
-              child: Text("F | [B]")
-            ),
-            Text("\n$cards"),
-            blankInfo(cardContent[0].topic,cardContent[0].information),
-            Text("\n[DEBUG] answer: ${blankedInfo[1]}"),
-            Text(""),
-            ElevatedButton(
-              onPressed: () => checkBlank(), 
-              child: Text("Check Answer")
-            ),
-            SizedBox(
-              width:300,
-              child:Row(
-                children: [
-                  Checkbox(
-                    value: filterWords, 
-                    onChanged: (bool? value) => setState(() {
-                      value ??= true;
-                      filterWords = value!; 
-                    })
-                  ),
-                  Text("Only allow key nouns/verbs as blanks")
-                ],
-              ),
-            ),
-          ],
-        )
-      ));
+      return blanksQuiz()
     }
-
-    
   }
+
+
+  // FLASHCARD FRONTEND
+  Widget flashCards(){
+    return Scaffold( 
+      body:Center(
+      child:Column(
+        children: [
+          menuButton(),
+          quizTypeToggleButton(),
+          shuffleToggleButton(),
+          Text("\n$cards"), // DEBUG
+          flashCardWidget(),
+          Text("\n[DEBUG] score: ${cardContent[0].score}\n"), // DEBUG
+          wrongFlashCardButton(),
+          correctFlashCardButton(),
+        ],
+      )
+    ));
+  }
+
+
+  // QUIZ FRONTEND
+  Widget blanksQuiz(){
+    return Scaffold( body:Center(
+      child:Column(
+        children: [
+          menuButton(),
+          backButton(),
+          Text("Fill in the Blanks"),
+          pfpButton(),
+          quizTypeToggleButton(),
+          Text("\n$cards"), // DEBUG
+          blankInfo(cardContent[0].topic,cardContent[0].information),
+          Text("\n[DEBUG] answer: ${blankedInfo[1]}\n"), // DEBUG
+          checkAnswerButton(),
+          filterCheckBox()
+        ],
+      )
+    ));
+  }
+
+  // Menu Button
+  Widget menuButton(){
+    return IconButton(
+      icon: const Icon(Icons.menu_rounded)
+      onPressed: () => setState(() {
+        // menu function
+      })
+    )
+  }
+
+
+  // Back button meant for appbar
+  Widget backButton(){
+    return IconButton(
+      icon: const Icon(Icons.arrow_back_rounded)
+      onPressed: () => setState(() {
+        Navigator.pop();
+      })
+    );
+  }
+
+  // PFP button meant for appbar
+  Widget pfpButton(){
+    return InkWell(
+      customBorder: const CircleBorder(),
+      onTap: () {
+        // profile picture function
+      },
+    child: const CircleAvatar(
+      radius: 24, // ADJUST FOR FRONTEND
+      backgroundImage: NetworkImage('https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png?utm_source=commons.wikimedia.org&utm_campaign=index&utm_content=thumbnail_unscaled'), // PLACEHOLDER
+      backgroundColor: Colors.grey,
+    ),
+  );
+  }
+
+
+
+  // TOGGLE BUTTON
+  Widget quizTypeToggleButton(){
+    return ElevatedButton(
+      onPressed: () => setState(() {
+        flashcard = !flashcard;
+      }), 
+      child: Text("[F] | B")
+    );
+  }
+
+
+  Widget shuffleToggleButton{
+    return ElevatedButton(
+      onPressed: () => setState(() {
+        shuffle = !shuffle;
+      }), 
+      child: Text("Shuffle") // add shuffle icon
+    );
+  }
+
+
+  // The Flashcard itself
+  Widget flashCardWidget(){
+    return ElevatedButton();
+    // Code for this is on my laptop.
+  }
+
+
+  // Button for getting a flashcard wrong
+  Widget wrongFlashCardButton(){
+    return ElevatedButton(
+      onPressed: () => nextContent(-1), 
+      child: Text("Got it wrong")
+    );
+  }
+
+  // Button for getting a flashcard correct
+  Widget correctFlashCardButton(){
+    return ElevatedButton(
+      onPressed: () => nextContent(1), 
+      child: Text("Got it right")
+    );
+  }
+
+  // Button to check answer in blank
+  Widget checkAnswerButton(){
+    return ElevatedButton(
+      onPressed: () => checkBlank(), 
+      child: Text("Check Answer")
+    );
+  }
+
+  Widget filterCheckBox(){
+    return SizedBox(
+      width:300, // ADJUST FOR FRONTEND
+      child:Row(
+        children: [
+          Checkbox(
+            value: filterWords, 
+            onChanged: (bool? value) => setState(() {
+              value ??= true;
+              filterWords = value!; 
+            })
+          ),
+          Text("Only allow key nouns/verbs as blanks")
+        ],
+      ),
+    );
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
   @override
@@ -216,15 +319,12 @@ class _FlashcardPageState extends State<FlashcardPage> {
 
   void nextContent(int bonus) async {
     try{
-      // FOR TESTING PURPOSES I made the score not final and I change it directly. 
-      // This should be changed when I implement the firebase stuff.
-
       FirebaseFirestore.instance.collection('users').doc(uid).collection('notes').doc(widget.noteid).collection("contents").doc(cardContent[0].id).update({"score": cardContent[0].score + bonus});
       
       final c = await FirebaseFirestore.instance.collection('users').doc(uid).collection('notes').doc(widget.noteid).collection("contents").doc(cardContent[0].id).get().timeout(const Duration(seconds: 10));
       cardContent[0].score = ContentItem.fromMap(c.data()!,c.id).score;
+      previousCardContent.add(cardContent[0]);
       cardContent.removeAt(0);
-      
 
       getCards();
     }catch(e){}
@@ -312,7 +412,9 @@ class _FlashcardPageState extends State<FlashcardPage> {
     if(cardContent.isEmpty){
       int? minScore = getMinScore(noteContent);
       cardContent = filterContent(noteContent,score: minScore);
-      cardContent.shuffle();
+      if(shuffle){
+        cardContent.shuffle();
+      }
     }
 
 
