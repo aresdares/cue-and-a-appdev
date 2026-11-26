@@ -23,8 +23,9 @@ class FlashcardPage extends StatefulWidget {
 
 class _FlashcardPageState extends State<FlashcardPage> {
 
+  bool isLoading = true;
   String titleText = "Flashcards";
-  String msg = "Loading...";
+  String msg = "";
 
   //String uid = "ARLMJ9M6YKUD6HgqY29mN0bSIbD2"; 
   User? user;
@@ -33,6 +34,7 @@ class _FlashcardPageState extends State<FlashcardPage> {
   bool? flashcard;
   //String noteid = "pVAR4EdsMejEHzWoqihN"; // Will get this noteId String from button in dashboard page or note page when merged
   
+  String noteTitle = "";
   List<ContentItem> noteContent = [];
   List<ContentItem> cardContent = [];
   List<ContentItem> previousCardContent = [];
@@ -50,6 +52,10 @@ class _FlashcardPageState extends State<FlashcardPage> {
     uid = user?.uid;
     noteid = widget.noteid;
 
+    //final doc = await FirebaseFirestore.instance.collection('users').doc(uid).collection('notes').doc(noteid!).get();
+    //Note note = Note.fromMap(doc.data()!, doc.id);
+    //noteTitle = noteid!;
+
     // DEBUG UID FOR TESTING PURPOSES. DELETE TO TEST REAL AUTH
     uid = "ARLMJ9M6YKUD6HgqY29mN0bSIbD2";
 
@@ -58,7 +64,7 @@ class _FlashcardPageState extends State<FlashcardPage> {
       return;
     }
     
-    final querySnapshot = await FirebaseFirestore.instance.collection('users').doc(uid).collection('notes').doc(widget.noteid).collection("contents").get().timeout(const Duration(seconds: 10));
+    final querySnapshot = await FirebaseFirestore.instance.collection('users').doc(uid).collection('notes').doc(noteid).collection("contents").get().timeout(const Duration(seconds: 10));
 
     if(querySnapshot.size > 0){
       for(var doc in querySnapshot.docs) {
@@ -73,6 +79,7 @@ class _FlashcardPageState extends State<FlashcardPage> {
     
     noteContent.sort((a, b) => a.position.compareTo(b.position));
     getCards();
+    isLoading = false;
   }
 
 
@@ -88,18 +95,20 @@ class _FlashcardPageState extends State<FlashcardPage> {
   @override
   Widget build(BuildContext context) {
     print("hi");
-    if(noteContent.isEmpty || cards.isEmpty){
+    if(isLoading){
       return Scaffold(
         appBar: UiBuilder.appBarBuilder(this,titleText),
         drawer: UiBuilder.drawerBuilder(this),
-        body: Center(child: Text(msg))
+        body: Center(child: message())
       );
     }
 
-
     if(cardContent.isEmpty){
+      msg = "This note is empty.";
       return Scaffold(
-        body: Center(child: Text("Note is empty."),)
+        appBar: UiBuilder.appBarBuilder(this,titleText),
+        drawer: UiBuilder.drawerBuilder(this),
+        body: Center(child: message())
       );
     }
 
@@ -112,6 +121,13 @@ class _FlashcardPageState extends State<FlashcardPage> {
     }
   }
 
+  Widget message(){
+    if (msg.isEmpty){
+      return const CircularProgressIndicator();
+    }else{
+      return Text(msg);
+    }
+  }
 
   // FLASHCARD FRONTEND
   Widget flashCards(){
@@ -119,17 +135,19 @@ class _FlashcardPageState extends State<FlashcardPage> {
         appBar: UiBuilder.appBarBuilder(this,titleText),
         drawer: UiBuilder.drawerBuilder(this),
         body: Center(
-          child:Column(
-            children: [
-              quizTypeToggleButton(),
-              // Text("\n$cards"), // DEBUG
-              flashCardWidget(),
-              // Text("\n[DEBUG] score: ${cardContent[0].score}\n"), // DEBUG
-              wrongFlashCardButton(),
-              correctFlashCardButton(),
-            ],
+          child: Column(
+              children: [
+                noteTitleBuilder(),
+                quizTypeToggleButton(),
+                Text("\n$cards"), // DEBUG
+                flashCardWidget(),
+                // Text("\n[DEBUG] score: ${cardContent[0].score}\n"), // DEBUG
+                wrongFlashCardButton(),
+                correctFlashCardButton(),
+              ],
+            )
           )
-        )
+        
       );
   }
 
@@ -141,15 +159,38 @@ class _FlashcardPageState extends State<FlashcardPage> {
         drawer: UiBuilder.drawerBuilder(this),
         body: Center(
         child:Column(
-          children: [
-            quizTypeToggleButton(),
-            // Text("\n$cards"), // DEBUG
-            blankInfo(cardContent[0].topic,cardContent[0].information),
-            Text("\n[DEBUG] answer: ${blankedInfo[1]}, shuffle: ${widget.usersettings.shuffle}, filter: ${widget.usersettings.filterWords}\n"), // DEBUG
-            checkAnswerButton(),
-          ],
+            children: [
+              noteTitleBuilder(),
+              quizTypeToggleButton(),
+              // Text("\n$cards"), // DEBUG
+              blankInfo(cardContent[0].topic,cardContent[0].information),
+              Text("\n[DEBUG] answer: ${blankedInfo[1]}, shuffle: ${widget.usersettings.shuffle}, filter: ${widget.usersettings.filterWords}, scoring: ${widget.usersettings.flashScoring}\n"), // DEBUG
+              checkAnswerButton(),
+            ],
+          
         )
       )
+    );
+  }
+
+
+
+  // NOTE TITLE
+  Widget noteTitleBuilder(){
+    return FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      future: FirebaseFirestore.instance.collection('users').doc(uid).collection('notes').doc(noteid).get(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+              return const CircularProgressIndicator();
+        }
+        if (!snapshot.hasData || !snapshot.data!.exists) {
+          return const Text('Note title not found');
+        }
+
+
+        final data = snapshot.data!.data()!;
+        return Text('Title: ${data['title']}');
+      },
     );
   }
 
@@ -190,18 +231,32 @@ class _FlashcardPageState extends State<FlashcardPage> {
 
   // Button for getting a flashcard wrong
   Widget wrongFlashCardButton(){
-    return IconButton(
-      onPressed: () => nextContent(-1), 
-      icon: Icon(Icons.close_rounded)
-    );
+    if(widget.usersettings.flashScoring){
+      return IconButton(
+        onPressed: () => nextContent(-1), 
+        icon: Icon(Icons.close_rounded)
+      );
+    }else{
+      return IconButton(
+        onPressed: () => prevContent(), 
+        icon: Icon(Icons.arrow_back_rounded)
+      );
+    }
   }
 
   // Button for getting a flashcard correct
   Widget correctFlashCardButton(){
-    return IconButton(
-      onPressed: () => nextContent(1), 
-      icon: Icon(Icons.check_rounded)
-    );
+    if(widget.usersettings.flashScoring){
+      return IconButton(
+        onPressed: () => nextContent(1), 
+        icon: Icon(Icons.check_rounded)
+      );
+    }else{
+      return IconButton(
+        onPressed: () => nextContent(0), 
+        icon: Icon(Icons.arrow_forward_rounded)
+      );
+    }
   }
 
   // Button to check answer in blank
@@ -267,16 +322,22 @@ class _FlashcardPageState extends State<FlashcardPage> {
 
 
 
-
   void nextContent(int bonus) async {
     try{
       FirebaseFirestore.instance.collection('users').doc(uid).collection('notes').doc(widget.noteid).collection("contents").doc(cardContent[0].id).update({"score": cardContent[0].score + bonus});
-      
+      print(cardContent);
       final c = await FirebaseFirestore.instance.collection('users').doc(uid).collection('notes').doc(widget.noteid).collection("contents").doc(cardContent[0].id).get().timeout(const Duration(seconds: 10));
       cardContent[0].score = ContentItem.fromMap(c.data()!,c.id).score;
       previousCardContent.add(cardContent[0]);
       cardContent.removeAt(0);
 
+      getCards();
+    }catch(e){}
+  }
+
+  void prevContent() async {
+    try{
+      cardContent.insert(0, previousCardContent.last);
       getCards();
     }catch(e){}
   }
@@ -363,14 +424,14 @@ class _FlashcardPageState extends State<FlashcardPage> {
 
   Future<void> getCards() async {
 
-    
-    // Gets all content under the note being viewed
-    noteContent;
-
     // Gets all content with the lowest score in the note
     if(cardContent.isEmpty){
-      int? minScore = getMinScore(noteContent);
-      cardContent = filterContent(noteContent,score: minScore);
+      if(widget.usersettings.flashScoring){
+        int? minScore = getMinScore(noteContent);
+        cardContent = filterContent(noteContent,score: minScore);
+      }else{
+        cardContent = noteContent.sublist(0);
+      }
       if(widget.usersettings.shuffle){
         cardContent.shuffle();
       }
@@ -381,7 +442,7 @@ class _FlashcardPageState extends State<FlashcardPage> {
 
     String str = "";
 
-    for (final card in noteContent){
+    for (final card in cardContent){
       str += "${card.topic} ${card.score}\n";
     }
 
@@ -389,6 +450,7 @@ class _FlashcardPageState extends State<FlashcardPage> {
 
     cards = str;
     setState(() {
+      isLoading = false;
     });
   }
 

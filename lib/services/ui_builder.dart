@@ -1,3 +1,4 @@
+import 'package:appdev_project/services/authentication.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -39,10 +40,7 @@ class UiBuilder {
           ),
           shuffleToggleButton(caller),
           filterCheckBox(caller),
-          ElevatedButton(
-            onPressed: () => {}, 
-            child: Text("Settings"),
-          ),
+          scoringMode(caller),
         ]
       )
     );
@@ -76,17 +74,11 @@ class UiBuilder {
         if (item){
           //exportNote();
         }else{
-          //logout();
+          Authentication auth = Authentication();
+          auth.signOut(); //logout();
         }
       },
       itemBuilder: (BuildContext context) => <PopupMenuEntry>[
-        const PopupMenuItem(
-          value: 1,
-          child: ListTile(
-            title: Text('Export Note'),
-          ),
-        ),
-        const PopupMenuDivider(),
         const PopupMenuItem(
           value: 0,
           child: ListTile(
@@ -140,5 +132,15 @@ class UiBuilder {
     );
   }
 
+  static Widget scoringMode(caller){
+    String text = "Track Progress: ";
+    text += caller.widget.usersettings.flashScoring?"ON":"OFF";
+
+    return ElevatedButton(
+      onPressed: () => caller.setState(() {
+        caller.widget.usersettings.flashScoring = !caller.widget.usersettings.flashScoring;
+      }), 
+      child: Text(text));
+  }
 
 }

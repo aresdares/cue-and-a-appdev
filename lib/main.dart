@@ -40,4 +40,5 @@ class CueAndA extends StatelessWidget {
 class UserSettings{
   bool shuffle = true;
   bool filterWords = true;
+  bool flashScoring = true;
 }
