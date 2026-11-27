@@ -140,7 +140,7 @@ class _FlashcardPageState extends State<FlashcardPage> {
               children: [
                 quizTypeToggleButton(),
                 settingsButton(),
-                Text("\n$cards"), // DEBUG
+                // Text("\n$cards"), // DEBUG
                 flashCardWidget(),
                 // Text("\n[DEBUG] score: ${cardContent[0].score}\n"), // DEBUG
                 wrongFlashCardButton(),
@@ -165,7 +165,7 @@ class _FlashcardPageState extends State<FlashcardPage> {
               settingsButton(),
               // Text("\n$cards"), // DEBUG
               Flashcard.blankInfo(this,cardContent[0].topic,cardContent[0].information),
-              Text("\n[DEBUG] answer: ${blankedInfo[1]}, shuffle: ${widget.usersettings.shuffle}, filter: ${widget.usersettings.filterWords}, scoring: ${widget.usersettings.flashScoring}\n"), // DEBUG
+              // Text("\n[DEBUG] answer: ${blankedInfo[1]}, shuffle: ${widget.usersettings.shuffle}, filter: ${widget.usersettings.filterWords}, scoring: ${widget.usersettings.flashScoring}\n"), // DEBUG
               checkAnswerButton(),
             ],
           

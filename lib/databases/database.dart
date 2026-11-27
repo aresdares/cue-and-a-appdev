@@ -117,7 +117,7 @@ class ContentItem{
             'information': information,
             'position' : position,
             'score': score,
-            'position': position,
+            //'position': position,
         };
     }
 
@@ -128,6 +128,7 @@ class ContentItem{
             noteId: map['noteId']??'',
             topic: map['topic']??'',
             information: map['information']??'',
+            //position: map['position']??'',
             score: map['score']??0,
             position: map['position']??0,
         );
