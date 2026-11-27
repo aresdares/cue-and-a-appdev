@@ -126,7 +126,6 @@ class NoteEditor {
         noteId: noteId,
         topic: topic,
         information: information,
-        position: 0,
         score: 0,
         position: position??contentList.length,
       );

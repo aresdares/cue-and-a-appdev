@@ -12,9 +12,11 @@ class UiBuilder {
   
   static String noteTitle = "";
 
-  static AppBar appBarBuilder(caller, String title, {String subtitle = ""}){
+  static AppBar appBarBuilder(caller, String title){
     List<Widget> titleWidgets = [Text(title)];
-    if(subtitle.isNotEmpty){
+    if(noteTitle.isEmpty){
+      titleWidgets.add(noteTitleBuilder(caller));
+    }else{
       titleWidgets.add(noteTitleBuilder(caller));
     }
     
@@ -70,16 +72,19 @@ class UiBuilder {
 
         final data = snapshot.data!.data()!;
         noteTitle = data['title'];
-        return Text(
-          'Title: ${data['title']}',
-          style: TextStyle(
-            fontSize: 15 // ADJUST FOR FRONTEND
-          )
-        );
+        return noteTitleText(data['title']);
       },
     );
   }
 
+  static Widget noteTitleText(text){
+    return Text(
+      'Title: ${text}',
+      style: TextStyle(
+        fontSize: 15 // ADJUST FOR FRONTEND
+      )
+    );
+  }
 
   // Menu Button
   static Widget menuButton(caller, context){
@@ -105,17 +110,12 @@ class UiBuilder {
   // PFP button meant for appbar
   static Widget pfpButton(){
     return PopupMenuButton(
-      onSelected: (item) {
-        if (item){
-          //exportNote();
-        }else{
+      onSelected: (value) {
           Authentication auth = Authentication();
           auth.signOut(); //logout();
-        }
       },
       itemBuilder: (BuildContext context) => <PopupMenuEntry>[
         const PopupMenuItem(
-          value: 0,
           child: ListTile(
             title: Text('Logout'),
           ),
