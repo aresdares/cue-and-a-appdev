@@ -79,6 +79,24 @@ class DashboardUtil {
     });
 
   }
+
+  Future<void> deleteNotebook(String id) async{
+    QuerySnapshot<Map<String, dynamic>> notes= await FirebaseFirestore.instance.collection('users').doc(userID).collection('notes').where('notebookId', isEqualTo: id).get();
+    await Future.wait(
+      notes.docs.map((note)=>deleteNote(note.id))
+    );
+    
+    await FirebaseFirestore.instance.collection('users').doc(userID).collection('notebooks').doc(id).delete();
+  }
+
+  Future<void> deleteNote(String id) async{
+    QuerySnapshot<Map<String, dynamic>> contents= await FirebaseFirestore.instance.collection('users').doc(userID).collection('notes').doc(id).collection('contents').get();
+    await Future.wait(
+      contents.docs.map((content)=> FirebaseFirestore.instance.collection('users').doc(userID).collection('notes').doc(id).collection('contents').doc(content.id).delete())
+    );
+
+    await FirebaseFirestore.instance.collection('users').doc(userID).collection('notes').doc(id).delete();
+  }
 }
 
 class Dashboard extends StatefulWidget {
@@ -98,6 +116,7 @@ class _DashboardState extends State<Dashboard> {
   @override
   void initState() {
     super.initState();
+    dashboardUtil.createNotebook("Rat", "blue");
     generateNoteList();
     generateNotebookList();
   }
@@ -216,37 +235,184 @@ Widget noteWidget(Note note){
 
 
 Widget notebookOptions(Notebook notebook) {
-    DashboardUtil dbUtil=DashboardUtil();
+  DashboardUtil dbUtil=DashboardUtil();
+  return PopupMenuButton(
+    icon: const Icon(Icons.more_vert),
+    itemBuilder: (BuildContext context)=><PopupMenuEntry>[
+      PopupMenuItem(
+        onTap: () =>popupEditNotebook(context,notebook),
+        child: Text("Edit")
+      ),
+      PopupMenuItem(
+        onTap: (){
+          dbUtil.copyNotebook(notebook);
+          final parentState = context.findAncestorStateOfType<_DashboardState>();
+          parentState!.generateNotebookList();
+        },
+        child: Text("Copy")
+      ),
+      PopupMenuItem(
+        onTap: () =>popupDetailsNotebook(context, notebook),
+        child: Text("Details")
+      ),
+      PopupMenuItem(
+        onTap: () async {
+          await dbUtil.deleteNotebook(notebook.id);
+          if (!context.mounted) return;
+          final parentState = context.findAncestorStateOfType<_DashboardState>();
+          parentState?.generateNotebookList();
+        },
+        child: Text("Delete")
+      ),
+    ]
+  );
+}
 
-    return PopupMenuButton(
-      icon: const Icon(Icons.more_vert),
-      itemBuilder: (BuildContext context)=><PopupMenuEntry>[
-        PopupMenuItem(
-          onTap: (){
-            
-          },
-          child: Text("Edit")
-        ),
-        PopupMenuItem(
-          onTap: (){
-            dbUtil.copyNotebook(notebook);
-            final parentState = context.findAncestorStateOfType<_DashboardState>();
-            parentState!.generateNotebookList();
-          },
-          child: Text("Copy")
-        ),
-        PopupMenuItem(
-          onTap: (){
+enum ColorNotebook{black, red, blue, green, yellow}
 
-          },
-          child: Text("Details")
-        ),
-        PopupMenuItem(
-          onTap: (){
+void popupEditNotebook(BuildContext context, Notebook notebook){
+  //For name changing
+  final _nameVal = TextEditingController(text: notebook.name);
 
-          },
-          child: Text("Delete")
-        ),
-      ]
-    );
-  }
+  //For the methods I made
+  DashboardUtil forDbUtil=DashboardUtil();
+
+  //For color changing, Turns the notebook's color into a member from the enum I made above
+  ColorNotebook _color=switch (notebook.color) {
+    "black" => ColorNotebook.black,
+    "red" => ColorNotebook.red,
+    "blue" => ColorNotebook.blue,
+    "green" => ColorNotebook.green,
+    "yellow" => ColorNotebook.yellow,
+    _=> ColorNotebook.black
+  };
+
+  showDialog(
+    //Differentiated context and thisIsEditContext cuz a lot of things didnt work when I didnt differentiate them
+    context: context, 
+    builder: (BuildContext thisIsEditContext){
+      return StatefulBuilder(
+        builder: (thisIsEditContext, setState){
+          return AlertDialog(
+            title: Text("Edit Notebook Details"),
+            content: SizedBox(
+              width: 400,
+              height: 160,
+              child: Column(
+                spacing: 20,
+                children: [
+                  Row(
+                    children: [
+                      Text("Name: "),
+                      SizedBox(
+                        width: 200,
+                        child: TextField(
+                          controller: _nameVal,  
+                        ),
+                      )
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Text("Color: "),
+                      //Radio Buttons to set ColorNotebook cuz the example in FlutterDocs did the same thing
+                      RadioGroup<ColorNotebook>(
+                        groupValue: _color,
+                        onChanged: (value){
+                          setState((){
+                            _color=value??ColorNotebook.black;
+                          });
+                        }, 
+                        child: Row(
+                          children: [
+                            Radio<ColorNotebook>(value: ColorNotebook.black),
+                            Radio<ColorNotebook>(value: ColorNotebook.red),
+                            Radio<ColorNotebook>(value: ColorNotebook.blue),
+                            Radio<ColorNotebook>(value: ColorNotebook.green),
+                            Radio<ColorNotebook>(value: ColorNotebook.yellow),
+                          ],
+                        )
+                      )
+                    ],
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () async{
+                          await forDbUtil.updateNotebook(notebook.id, _nameVal.text.trim(), _color.name);
+                          if (!thisIsEditContext.mounted) return;
+                          final parentState = context.findAncestorStateOfType<_DashboardState>();
+                          parentState?.generateNotebookList();
+                          Navigator.pop(thisIsEditContext);
+                        }, 
+                        child: Text("Apply Changes")
+                      ),
+                      TextButton(
+                        onPressed: ()=>Navigator.pop(context), 
+                        child: Text("Cancel")
+                      )
+                    ],
+                  )
+                ],
+              ),
+            )
+          );
+        }
+      );
+    }
+  ); 
+}
+
+void popupDetailsNotebook(BuildContext context, Notebook notebook){
+  showDialog(
+    context: context, 
+    builder: (BuildContext context){
+      return AlertDialog(
+        title: Text("Notebook Details"),
+        content: SizedBox(
+          width: 400,
+          height: 200,
+          child: Column(
+            spacing: 20,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Text("Name: ${notebook.name}"),
+                ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Text("Color: ${notebook.color }"),
+                ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Text("Date Created: ${notebook.dateCreated }"),
+                ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Text("Last Modified: ${notebook.dateModified }"),
+                ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: ()=>Navigator.pop(context), 
+                    child: Text("Close")
+                  )
+                ],
+              )
+            ],
+          ),
+        )
+      );
+    }
+  );
+}
