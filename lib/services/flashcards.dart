@@ -12,38 +12,30 @@ import 'dart:math';
 class Flashcard{
 
   static Future<void> getContents(caller) async {
-    caller.user = FirebaseAuth.instance.currentUser;
-    caller.uid = caller.user?.uid;
-    caller.noteid = caller.widget.noteid;
+    print("getcontent");
+    caller.noteId = caller.widget.noteId;
 
-    //final doc = await FirebaseFirestore.instance.collection('users').doc(uid).collection('notes').doc(noteid!).get();
-    //Note note = Note.fromMap(doc.data()!, doc.id);
-    //noteTitle = noteid!;
-
-    // DEBUG UID FOR TESTING PURPOSES. DELETE TO TEST REAL AUTH
-    caller.uid = "ARLMJ9M6YKUD6HgqY29mN0bSIbD2";
-
-    if(caller.uid == null){
+    if(caller.widget.userSettings.uid == null){
       caller.setState(() => {caller.msg = "User not logged in."});
       return;
     }
     
-    final querySnapshot = await FirebaseFirestore.instance.collection('users').doc(caller.uid).collection('notes').doc(caller.noteid).collection("contents").get().timeout(const Duration(seconds: 10));
+    print("querying"+caller.widget.userSettings.uid+" "+caller.widget.noteId);
+    final querySnapshot = await FirebaseFirestore.instance.collection('users').doc(caller.widget.userSettings.uid).collection('notes').doc(caller.widget.noteId).collection("contents").get().timeout(const Duration(seconds: 30));
+    print("query end");
 
     if(querySnapshot.size > 0){
+      print("qssize");
       for(var doc in querySnapshot.docs) {
         caller.noteContent!.add(ContentItem.fromMap(doc.data(), doc.id));
       }
     }
 
-    if(caller.noteContent!.isEmpty){
-      caller.setState(() => {caller.msg = "Note not found."});
-      return;
-    }
+    caller.noteContent.sort((ContentItem a, ContentItem b) => a.position.compareTo(b.position));
     
-    caller.noteContent.sort((a, b) => a.position.compareTo(b.position));
     getCards(caller);
     caller.isLoading = false;
+    print("getcontent_end");
   }
 
   static List<ContentItem> filterContent(List<ContentItem> content,{int? score}){
@@ -75,9 +67,10 @@ class Flashcard{
 
 
   static void nextContent(caller, int bonus) async {
+    print("nextContent");
     try{
-      FirebaseFirestore.instance.collection('users').doc(caller.uid).collection('notes').doc(caller.widget.noteid).collection("contents").doc(caller.cardContent[0].id).update({"score": caller.cardContent[0].score + bonus});
-      final c = await FirebaseFirestore.instance.collection('users').doc(caller.uid).collection('notes').doc(caller.widget.noteid).collection("contents").doc(caller.cardContent[0].id).get().timeout(const Duration(seconds: 10));
+      FirebaseFirestore.instance.collection('users').doc(caller.widget.userSettings.uid).collection('notes').doc(caller.widget.noteId).collection("contents").doc(caller.cardContent[0].id).update({"score": caller.cardContent[0].score + bonus});
+      final c = await FirebaseFirestore.instance.collection('users').doc(caller.widget.userSettings.uid).collection('notes').doc(caller.widget.noteId).collection("contents").doc(caller.cardContent[0].id).get().timeout(const Duration(seconds: 10));
       caller.cardContent[0].score = ContentItem.fromMap(c.data()!,c.id).score;
       caller.previousCardContent.add(caller.cardContent[0]);
       caller.cardContent.removeAt(0);
@@ -155,7 +148,7 @@ class Flashcard{
     List<String> filler = ['maybe','could','are','just','defined','by','where','do','means',':',')','(','\n','is','for','and','nor','but','or','yet','so','the','a','an','no','i','you','she','he','it','we','they','me','you','him','her','it','us','them','mine','yours','his','hers','its','ours','theirs','my','your','his','her','its','our','their','myself','yourself','himself','herself','itself','oneself','ourselves','yourselves','themselves','this','that','these','those','such','neither','who','whom','whose','which','that','whoever','whomever','whichever','whatever','who','whom','whose','what','which','whatever','another','anybody','anyone','anything','each','either','everybody','everyone','everything','much','neither','nobody','somebody','someone','somethings','in','on','at','by','for','with','about','against','between','into','through','during','before','after','above','below','about','across','during','except','since','against','for','than','along','from','through','among','in','to','around','toward','as','into','at','like','of','until','onto','via','with','by'];
 
     for(final match in matches){
-      if(!caller.widget.usersettings.filterWords || !filler.contains(match.group(0)!.toLowerCase())){
+      if(!caller.widget.userSettings.filterWords || !filler.contains(match.group(0)!.toLowerCase())){
         words.add(match);
       }
 
@@ -174,16 +167,16 @@ class Flashcard{
 
 
   static Future<void> getCards(caller) async {
-
+    print("getcards");
     // Gets all content with the lowest score in the note
     if(caller.cardContent.isEmpty){
-      if(caller.widget.usersettings.flashScoring){
+      if(caller.widget.userSettings.flashScoring){
         int? minScore = getMinScore(caller.noteContent);
         caller.cardContent = filterContent(caller.noteContent,score: minScore);
       }else{
         caller.cardContent = caller.noteContent.sublist(0);
       }
-      if(caller.widget.usersettings.shuffle){
+      if(caller.widget.userSettings.shuffle){
         caller.cardContent.shuffle();
       }
     }
@@ -201,14 +194,16 @@ class Flashcard{
 
     caller.setState(() {  
       caller.cards = str;
+
       caller.isLoading = false;
+      print("getcards_end");
     });
   }
 
   static void resetScores(caller) async{
     try{
       for(final n in caller.noteContent){
-        FirebaseFirestore.instance.collection('users').doc(caller.uid).collection('notes').doc(caller.widget.noteid).collection("contents").doc(n.id).update({"score": 0});
+        FirebaseFirestore.instance.collection('users').doc(caller.userSettings.uid).collection('notes').doc(caller.widget.noteId).collection("contents").doc(n.id).update({"score": 0});
         n.score = 0;
       }
       caller.cardContent = [];

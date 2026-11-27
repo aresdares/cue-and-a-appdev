@@ -5,21 +5,29 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../firebase_options.dart';
 import '../databases/database.dart';
+import '../services/note_editor.dart';
 
 
 
 class UiBuilder {
-  
-  static String noteTitle = "";
 
-  static AppBar appBarBuilder(caller, String title){
+  static AppBar appBarBuilder(caller, String title, {bool accessNote = false, bool disableBack = false}){
     List<Widget> titleWidgets = [Text(title)];
-    if(noteTitle.isEmpty){
-      titleWidgets.add(noteTitleBuilder(caller));
-    }else{
+    if(accessNote){
       titleWidgets.add(noteTitleBuilder(caller));
     }
-    
+
+    List<Widget> leadingWidgets = [
+      Builder(
+        builder: (context) {
+          return menuButton(caller,context);
+        },
+      )
+    ];
+    if(!disableBack){
+      leadingWidgets.add(backButton(caller, caller.context));
+    }
+
     return AppBar(
       title: Column(
         children: titleWidgets
@@ -27,14 +35,7 @@ class UiBuilder {
       centerTitle: true,
       leadingWidth: 100,
       leading: Row(
-        children: [
-          Builder(
-            builder: (context) {
-              return menuButton(caller,context);
-            },
-          ),
-          backButton(caller,caller.context)
-        ]
+        children: leadingWidgets,
       ),
       actions: <Widget>[
         pfpButton()
@@ -57,26 +58,7 @@ class UiBuilder {
     );
   }
 
-  
-  // NOTE TITLE
-  static Widget noteTitleBuilder(caller){
-    return FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      future: FirebaseFirestore.instance.collection('users').doc(caller.uid).collection('notes').doc(caller.noteid).get(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-              return const CircularProgressIndicator();
-        }
-        if (!snapshot.hasData || !snapshot.data!.exists) {
-          return const Text('Note title not found');
-        }
-
-        final data = snapshot.data!.data()!;
-        noteTitle = data['title'];
-        return noteTitleText(data['title']);
-      },
-    );
-  }
-
+  // Note Title
   static Widget noteTitleText(text){
     return Text(
       'Title: ${text}',
@@ -136,10 +118,10 @@ class UiBuilder {
       child:Row(
         children: [
           Checkbox(
-            value: caller.widget.usersettings.shuffle, 
+            value: caller.widget.userSettings.shuffle, 
             onChanged: (bool? value) => caller.setState(() {
               value ??= true;
-              caller.widget.usersettings.shuffle = value!; 
+              caller.widget.userSettings.shuffle = value!; 
             })
           ),
           Text("Shuffle flashcard/question order")
@@ -155,10 +137,10 @@ class UiBuilder {
       child:Row(
         children: [
           Checkbox(
-            value: caller.widget.usersettings.filterWords, 
+            value: caller.widget.userSettings.filterWords, 
             onChanged: (bool? value) => caller.setState(() {
               value ??= true;
-              caller.widget.usersettings.filterWords = value!; 
+              caller.widget.userSettings.filterWords = value!; 
             })
           ),
           Text("Only allow key nouns/verbs as blanks")
@@ -169,13 +151,36 @@ class UiBuilder {
 
   static Widget scoringMode(caller){
     String text = "Track Progress: ";
-    text += caller.widget.usersettings.flashScoring?"ON":"OFF";
+    text += caller.widget.userSettings.flashScoring?"ON":"OFF";
 
     return ElevatedButton(
       onPressed: () => caller.setState(() {
-        caller.widget.usersettings.flashScoring = !caller.widget.usersettings.flashScoring;
+        caller.widget.userSettings.flashScoring = !caller.widget.userSettings.flashScoring;
       }), 
       child: Text(text));
   }
 
+
+
+
+
+
+
+  
+  // Logic function. Ignore for frontend
+  static Widget noteTitleBuilder(caller){
+    //  TITLE + LISTENER 
+    return StreamBuilder<Note>(
+      //  streamNote from my note_editor.dart
+      //  
+      stream: NoteEditor().streamNote(caller.widget.noteId),
+      //  builder boilerplate
+      builder: (context,snapshot){
+        if(!snapshot.hasData){
+          return noteTitleText('Loading Title...');
+        }
+        return noteTitleText('Title: ${snapshot.data!.title}');
+      },
+    );
+  }
 }

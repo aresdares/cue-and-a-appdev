@@ -12,12 +12,12 @@ import '../main.dart';
 import 'dart:math';
 
 class FlashcardPage extends StatefulWidget {
-  new({super.key, required this.usersettings, required this.noteid, required this.flashcard});
+  new({super.key, required this.userSettings, required this.noteId, required this.flashcard});
 
   final random = Random();
-  final String noteid;
+  final String noteId;
   final bool flashcard;
-  final UserSettings usersettings;
+  final UserSettings userSettings;
 
   @override
   State<FlashcardPage> createState() => _FlashcardPageState();
@@ -25,94 +25,53 @@ class FlashcardPage extends StatefulWidget {
 
 class _FlashcardPageState extends State<FlashcardPage> {
 
-  bool isLoading = true;
-  String titleText = "Flashcards";
-  String msg = "";
-
-  //String uid = "ARLMJ9M6YKUD6HgqY29mN0bSIbD2"; 
+  // CONFIG VARS
   User? user;
-  String? uid, noteid;
-  
+  String? noteId;
   bool? flashcard;
-  //String noteid = "pVAR4EdsMejEHzWoqihN"; // Will get this noteId String from button in dashboard page or note page when merged
-  
+
+  // DATA VARS
   String noteTitle = "";
   List<ContentItem> noteContent = [];
   List<ContentItem> cardContent = [];
   List<ContentItem> previousCardContent = [];
   List<String> blankedInfo = [];
+
+  // LOGIC VARS
   final TextEditingController blankController = TextEditingController();
   String cardText = "";
   bool showtopic = false;
+  bool isLoading = true;
+  String titleText = "Flashcards";
+  String msg = "";
 
-  // DEBUG text to see what's in cardContent
+  // DEBUG VARS
   String cards = "";
-
-
-  Future<void> getContents() async {
-    user = FirebaseAuth.instance.currentUser;
-    uid = user?.uid;
-    noteid = widget.noteid;
-
-    //final doc = await FirebaseFirestore.instance.collection('users').doc(uid).collection('notes').doc(noteid!).get();
-    //Note note = Note.fromMap(doc.data()!, doc.id);
-    //noteTitle = noteid!;
-
-    // DEBUG UID FOR TESTING PURPOSES. DELETE TO TEST REAL AUTH
-    uid = "ARLMJ9M6YKUD6HgqY29mN0bSIbD2";
-
-    if(uid == null){
-      setState(() => {msg = "User not logged in."});
-      return;
-    }
-    
-    final querySnapshot = await FirebaseFirestore.instance.collection('users').doc(uid).collection('notes').doc(noteid).collection("contents").get().timeout(const Duration(seconds: 10));
-
-    if(querySnapshot.size > 0){
-      for(var doc in querySnapshot.docs) {
-        noteContent!.add(ContentItem.fromMap(doc.data(), doc.id));
-      }
-    }
-
-    if(noteContent!.isEmpty){
-      setState(() => {msg = "Note not found."});
-      return;
-    }
-    
-    noteContent.sort((a, b) => a.position.compareTo(b.position));
-    Flashcard.getCards(this);
-    isLoading = false;
-  }
-
-
-
 
   @override
   void initState() {
+    print("init");
     super.initState();
     flashcard = widget.flashcard;
-    getContents();
+    Flashcard.getContents(this);
   }
+
+
 
   @override
   Widget build(BuildContext context) {
-    if(isLoading){
+    // FRONTEND WHEN LOADING OR NOTE IS EMPTY
+    if(isLoading || noteContent.isEmpty){
+      if(cardContent.isEmpty){msg = "This note is empty.";}
       return Scaffold(
-        appBar: UiBuilder.appBarBuilder(this,titleText),
+        appBar: UiBuilder.appBarBuilder(this,titleText,accessNote: true),
         drawer: UiBuilder.drawerBuilder(this),
         body: Center(child: message())
       );
     }
 
-    if(cardContent.isEmpty){
-      msg = "This note is empty.";
-      return Scaffold(
-        appBar: UiBuilder.appBarBuilder(this,titleText),
-        drawer: UiBuilder.drawerBuilder(this),
-        body: Center(child: message())
-      );
-    }
-
+    print("build_end");
+    // FRONTEND
     if(flashcard??widget.flashcard){
       titleText = "Flashcards";
       return flashCards();
@@ -122,21 +81,36 @@ class _FlashcardPageState extends State<FlashcardPage> {
     }
   }
 
+
+
+
+
+  // PAGE BODY WHEN LOADING OR DISPLAYING ERROR MESSAGE
   Widget message(){
     if (msg.isEmpty){
+    print("message");
       return const CircularProgressIndicator();
     }else{
       return Text(msg);
     }
   }
 
+
+
+
+
+
+
+  // ========== MODES ===========
+
   // FLASHCARD FRONTEND
   Widget flashCards(){
     return Scaffold(
-        appBar: UiBuilder.appBarBuilder(this,titleText),
+        appBar: UiBuilder.appBarBuilder(this,titleText,accessNote: true),
         drawer: UiBuilder.drawerBuilder(this),
         body: Center(
           child: Column(
+              spacing: 10,
               children: [
                 quizTypeToggleButton(),
                 settingsButton(),
@@ -160,6 +134,7 @@ class _FlashcardPageState extends State<FlashcardPage> {
         drawer: UiBuilder.drawerBuilder(this),
         body: Center(
         child:Column(
+              spacing: 10,
             children: [
               quizTypeToggleButton(),
               settingsButton(),
@@ -173,6 +148,18 @@ class _FlashcardPageState extends State<FlashcardPage> {
       )
     );
   }
+
+
+
+
+
+
+
+
+
+
+
+  // ========== WIDGETS ==========
 
   // TOGGLE BUTTON
   Widget quizTypeToggleButton(){
@@ -226,7 +213,7 @@ class _FlashcardPageState extends State<FlashcardPage> {
 
   // Button for getting a flashcard wrong
   Widget wrongFlashCardButton(){
-    if(widget.usersettings.flashScoring){
+    if(widget.userSettings.flashScoring){
       return IconButton(
         onPressed: () => Flashcard.nextContent(this,-1), 
         icon: Icon(Icons.close_rounded)
@@ -241,7 +228,7 @@ class _FlashcardPageState extends State<FlashcardPage> {
 
   // Button for getting a flashcard correct
   Widget correctFlashCardButton(){
-    if(widget.usersettings.flashScoring){
+    if(widget.userSettings.flashScoring){
       return IconButton(
         onPressed: () => Flashcard.nextContent(this,1), 
         icon: Icon(Icons.check_rounded)

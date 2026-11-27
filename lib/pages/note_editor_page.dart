@@ -1,12 +1,15 @@
+import 'package:appdev_project/main.dart';
 import 'package:flutter/material.dart';
 import '../databases/database.dart';
 import '../services/note_editor.dart';
+import '../services/ui_builder.dart';
 
 class NoteEditorPage extends StatefulWidget{
   //  requird to pass note
   //  kasi note editor duh
   final String noteId;
-  const NoteEditorPage({super.key, required this.noteId});
+  final UserSettings userSettings;
+  const NoteEditorPage({super.key, required this.noteId, required this.userSettings});
 
   @override
   State<NoteEditorPage> createState()=> _NoteEditorPage();
@@ -19,6 +22,7 @@ class _NoteEditorPage extends State<NoteEditorPage>{
   //  controller for title
   final NoteEditor editor = NoteEditor();
   final TextEditingController titleController=TextEditingController();
+  String? noteTitle;
   
   //  controllers for note input
   final TextEditingController topicController=TextEditingController();
@@ -98,26 +102,11 @@ class _NoteEditorPage extends State<NoteEditorPage>{
   //  BUILD METHOD
   Widget build(BuildContext context){
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Note Editor')
-      ),
+      appBar: UiBuilder.appBarBuilder(this,"Note Editor",accessNote: true),
+      drawer: UiBuilder.drawerBuilder(this),
       body: Center(
         child: Column(
           children: [
-
-            //  TITLE + LISTENER 
-            StreamBuilder<Note>(
-                //  streamNote from my note_editor.dart
-                //  
-              stream: editor.streamNote(widget.noteId),
-              //  builder boilerplate
-              builder: (context,snapshot){
-                if(!snapshot.hasData){
-                  return Text('Loading Title...');
-                }
-                return Text('Title: ${snapshot.data!.title}');
-              },
-            ),
 
             //  TITLE INPUT
             TextField(

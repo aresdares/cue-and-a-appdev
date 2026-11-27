@@ -1,4 +1,5 @@
 import 'package:appdev_project/pages/note_editor_page.dart';
+import 'package:appdev_project/pages/test_home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -34,35 +35,45 @@ Future<void> main() async {
       );
       user = cred.user;
     }
-    print(user!.uid); // DEBUG
   }
+  
+    print(user!.uid); // DEBUG
 
-  final UserSettings usersettings = UserSettings();
-  runApp(CueAndA(usersettings: usersettings));
+  final UserSettings userSettings = UserSettings(user: user);
+  runApp(CueAndA(userSettings: userSettings));
 }
 
-class CueAndA extends StatelessWidget {
-  const CueAndA({super.key, required this.usersettings});
 
-  final UserSettings usersettings;
+
+
+class CueAndA extends StatelessWidget {
+  const CueAndA({super.key, required this.userSettings});
+
+  final UserSettings userSettings;
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: "Cue and A",
-      initialRoute: "/editor",
+      initialRoute: "/",
       routes: {
-        "/": (context) => Scaffold(), // AUTHENTICATION
+        "/": (context) => TestHomepage(userSettings: userSettings,), // AUTHENTICATION
         "/dashboard": (context) => Scaffold(), // DASHBOARD
-        "/editor": (context) => NoteEditorPage(noteId: "pVAR4EdsMejEHzWoqihN"), // NOTE EDITOR
-        "/flashcards": (context) => FlashcardPage(usersettings: usersettings, noteid: "pVAR4EdsMejEHzWoqihN", flashcard: true), // FLASHCARDS
+        "/editor": (context) => NoteEditorPage(userSettings: userSettings, noteId: "pVAR4EdsMejEHzWoqihN"), // NOTE EDITOR
+        "/flashcards": (context) => FlashcardPage(userSettings: userSettings, noteId: "pVAR4EdsMejEHzWoqihN", flashcard: true), // FLASHCARDS
       }
     );
   }
 }
 
 class UserSettings{
+  User user;
+  String? uid;
   bool shuffle = true;
   bool filterWords = true;
   bool flashScoring = true;
+
+  UserSettings({required this.user}){
+    this.uid = user.uid;
+  }
 }

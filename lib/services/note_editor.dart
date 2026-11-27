@@ -17,7 +17,6 @@ class NoteEditor {
   //  create reference to firestore database
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-
   //  method for getting get current user
   String getCurrentUserId() {
     //  get id of user, taken directly from firebase auth

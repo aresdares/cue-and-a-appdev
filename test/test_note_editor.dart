@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../firebase_options.dart';
-import '../databases/database.dart';
-import '../pages/note_editor_page.dart'; // <-- Change to your actual file path/name
+import '../lib/firebase_options.dart';
+import '../lib/databases/database.dart';
+import '../lib/pages/note_editor_page.dart'; // <-- Change to your actual file path/name
+import '../lib/main.dart';
 
 void main() async {
   // 1. Required before calling any async Firebase setup inside main()
@@ -44,6 +45,7 @@ void main() async {
     dateModified: DateTime.now(),
   );
 
+  UserSettings usersettings = UserSettings(uid: "");
   DocumentReference noteRef = await FirebaseFirestore.instance
       .collection('users')
       .doc(user!.uid)
@@ -51,19 +53,21 @@ void main() async {
       .add(dummyNote.toMap());
 
   // 5. Launch the app directly into NoteEditorPage with that new noteId
-  runApp(TempTestApp(testNoteId: noteRef.id));
+  runApp(TempTestApp(testNoteId: noteRef.id, usersettings: usersettings));
 }
 
 class TempTestApp extends StatelessWidget {
   final String testNoteId;
+  final UserSettings usersettings;
 
-  const TempTestApp({super.key, required this.testNoteId});
+  const TempTestApp({super.key, required this.testNoteId, required this.usersettings});
+
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: NoteEditorPage(noteId: testNoteId),
+      home: NoteEditorPage(noteId: testNoteId, userSettings: usersettings),
     );
   }
 }
