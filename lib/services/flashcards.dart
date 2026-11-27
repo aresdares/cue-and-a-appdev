@@ -27,7 +27,9 @@ class Flashcard{
     if(querySnapshot.size > 0){
       print("qssize");
       for(var doc in querySnapshot.docs) {
-        caller.noteContent!.add(ContentItem.fromMap(doc.data(), doc.id));
+        if(!(ContentItem.fromMap(doc.data(), doc.id).topic == "" || ContentItem.fromMap(doc.data(), doc.id).topic == "")){
+          caller.noteContent!.add(ContentItem.fromMap(doc.data(), doc.id));
+        }
       }
     }
 
@@ -154,6 +156,8 @@ class Flashcard{
 
     }
 
+    if(words.length == 0){return [];}
+
     int ans = caller.widget.random.nextInt(words.length);
     
     String front = "$topic\n${text.substring(0,words[ans].start)}";
@@ -180,7 +184,6 @@ class Flashcard{
         caller.cardContent.shuffle();
       }
     }
-    
     caller.cardText = caller.cardContent[0].information;
     caller.showtopic = false;
 
