@@ -59,7 +59,7 @@ class CueAndA extends StatelessWidget {
       initialRoute: "/",
       routes: {
         "/": (context) => TestHomepage(userSettings: userSettings,),
-        "/login": (context) => DummyLogin(userSettings: userSettings),
+        "/login": (context) => LogApp(userSettings: userSettings),
         "/dashboard": (context) => Scaffold(), // DASHBOARD
         "/editor": (context) => NoteEditorPage(userSettings: userSettings, noteId: "pVAR4EdsMejEHzWoqihN"), // NOTE EDITOR
         "/flashcards": (context) => FlashcardPage(userSettings: userSettings, noteId: "pVAR4EdsMejEHzWoqihN", flashcard: true), // FLASHCARDS

@@ -1,8 +1,10 @@
+import "package:appdev_project/main.dart";
 import "package:cloud_firestore/cloud_firestore.dart";
 import "package:firebase_auth/firebase_auth.dart";
 import "package:flutter/material.dart";
 
 import "../databases/database.dart";
+import "../services/ui_builder.dart";
 
 class DashboardUtil {
   String? get userID => FirebaseAuth.instance.currentUser?.uid;
@@ -82,7 +84,9 @@ class DashboardUtil {
 }
 
 class Dashboard extends StatefulWidget {
-  const new({super.key});
+  const new({super.key, required this.userSettings});
+
+  final UserSettings userSettings;
 
   @override
   State<Dashboard> createState() => _DashboardState();
@@ -135,7 +139,8 @@ class _DashboardState extends State<Dashboard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
+      appBar: UiBuilder.appBarBuilder(this,"Dashboard",accessNote: false,disableBack: true),
+      drawer: UiBuilder.drawerBuilder(this),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         spacing: 20,

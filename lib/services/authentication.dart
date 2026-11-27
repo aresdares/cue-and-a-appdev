@@ -67,7 +67,7 @@ class LogApp extends StatelessWidget {
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
-            return const Dashboard();
+            return Dashboard(userSettings: userSettings);
           }
           return DummyLogin(userSettings: userSettings);
         },
