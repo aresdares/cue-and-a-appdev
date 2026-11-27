@@ -59,6 +59,12 @@ class _TestHomepageState extends State<TestHomepage> {
                 ),
                 ElevatedButton(
                   onPressed: () => {
+                    Navigator.pushNamed(context, "/login")
+                  }, 
+                  child: Text("Authentication"),
+                ),
+                ElevatedButton(
+                  onPressed: () => {
                     Navigator.push(
                       context,
                       MaterialPageRoute<void>(
