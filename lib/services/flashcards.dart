@@ -4,84 +4,308 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../firebase_options.dart';
 import '../databases/database.dart';
+import './ui_builder.dart';
+
+import '../main.dart';
+import 'dart:math';
 
 class FlashcardPage extends StatefulWidget {
-  const new({super.key});
+  new({super.key, required this.usersettings, required this.noteid, required this.flashcard});
+
+  final random = Random();
+  final String noteid;
+  final bool flashcard;
+  final UserSettings usersettings;
 
   @override
   State<FlashcardPage> createState() => _FlashcardPageState();
 }
 
 class _FlashcardPageState extends State<FlashcardPage> {
+
+  bool isLoading = true;
+  String titleText = "Flashcards";
+  String msg = "";
+
+  //String uid = "ARLMJ9M6YKUD6HgqY29mN0bSIbD2"; 
+  User? user;
+  String? uid, noteid;
   
-  // FOR TESTING PURPOSES placeholder content item.
-  // I need to replace this with getting contentitems from Firebase.
-  final content = [
-    ContentItem(id:"1",noteId:"A",topic:"topic1",information:"info1"),
-    ContentItem(id:"2",noteId:"A",topic:"topic2",information:"info2"),
-    ContentItem(id:"3",noteId:"B",topic:"topic3",information:"info3"),
-    ContentItem(id:"4",noteId:"B",topic:"topic4",information:"info4"),
-    ContentItem(id:"5",noteId:"A",topic:"topic5",information:"info5"),
-    ContentItem(id:"6",noteId:"B",topic:"topic6",information:"info6"),
-    ContentItem(id:"7",noteId:"A",topic:"topic7",information:"info7"),
-    ContentItem(id:"8",noteId:"B",topic:"topic8",information:"info8"),
-    ContentItem(id:"9",noteId:"A",topic:"topic9",information:"info9"),
-  ];
+  bool? flashcard;
+  //String noteid = "pVAR4EdsMejEHzWoqihN"; // Will get this noteId String from button in dashboard page or note page when merged
   
-  String currentNote = "A"; // Will get this noteId String from button in dashboard page or note page when merged
+  String noteTitle = "";
   List<ContentItem> noteContent = [];
   List<ContentItem> cardContent = [];
+  List<ContentItem> previousCardContent = [];
+  List<String> blankedInfo = [];
+  final TextEditingController blankController = TextEditingController();
+  String cardText = "";
+  bool showtopic = false;
+
+  // DEBUG text to see what's in cardContent
+  String cards = "";
+
+
+  Future<void> getContents() async {
+    user = FirebaseAuth.instance.currentUser;
+    uid = user?.uid;
+    noteid = widget.noteid;
+
+    //final doc = await FirebaseFirestore.instance.collection('users').doc(uid).collection('notes').doc(noteid!).get();
+    //Note note = Note.fromMap(doc.data()!, doc.id);
+    //noteTitle = noteid!;
+
+    // DEBUG UID FOR TESTING PURPOSES. DELETE TO TEST REAL AUTH
+    uid = "ARLMJ9M6YKUD6HgqY29mN0bSIbD2";
+
+    if(uid == null){
+      setState(() => {msg = "User not logged in."});
+      return;
+    }
+    
+    final querySnapshot = await FirebaseFirestore.instance.collection('users').doc(uid).collection('notes').doc(noteid).collection("contents").get().timeout(const Duration(seconds: 10));
+
+    if(querySnapshot.size > 0){
+      for(var doc in querySnapshot.docs) {
+        noteContent!.add(ContentItem.fromMap(doc.data(), doc.id));
+      }
+    }
+
+    if(noteContent!.isEmpty){
+      setState(() => {msg = "Note not found."});
+      return;
+    }
+    
+    noteContent.sort((a, b) => a.position.compareTo(b.position));
+    getCards();
+    isLoading = false;
+  }
+
+
+
+
+  @override
+  void initState() {
+    super.initState();
+    flashcard = widget.flashcard;
+    getContents();
+  }
 
   @override
   Widget build(BuildContext context) {
+    print("hi");
+    if(isLoading){
+      return Scaffold(
+        appBar: UiBuilder.appBarBuilder(this,titleText),
+        drawer: UiBuilder.drawerBuilder(this),
+        body: Center(child: message())
+      );
+    }
 
-    // Gets all content under the note being viewed
-    noteContent = filterContent(content, note:currentNote);
-
-    // Gets all content with the lowest score in the note
     if(cardContent.isEmpty){
-      int? minScore = getMinScore(noteContent);
-      cardContent = filterContent(noteContent,score: minScore);
-      cardContent.shuffle();
+      msg = "This note is empty.";
+      return Scaffold(
+        appBar: UiBuilder.appBarBuilder(this,titleText),
+        drawer: UiBuilder.drawerBuilder(this),
+        body: Center(child: message())
+      );
     }
 
-    // DEBUG text to see what's in cardContent
-    String cards = "";
-    for(final card in cardContent){
-      cards += card.topic + " " + card.score.toString() + "\n";
+    if(flashcard??widget.flashcard){
+      titleText = "Flashcards";
+      return flashCards();
+    } else {
+      titleText = "Fill in the Blanks";
+      return blanksQuiz();
     }
+  }
 
-    return Center(
-      child:Column(children: [
-        Text(cards),
-        Text(cardContent[0].topic),
-        Text(cardContent[0].information),
-        Text(cardContent[0].score.toString()),
-        ElevatedButton(
-          onPressed: () => nextContent(-1), 
-          child: Text("Got it wrong")
-        ),
-        ElevatedButton(
-          onPressed: () => nextContent(1), 
-          child: Text("Got it right")
+  Widget message(){
+    if (msg.isEmpty){
+      return const CircularProgressIndicator();
+    }else{
+      return Text(msg);
+    }
+  }
+
+  // FLASHCARD FRONTEND
+  Widget flashCards(){
+    return Scaffold(
+        appBar: UiBuilder.appBarBuilder(this,titleText),
+        drawer: UiBuilder.drawerBuilder(this),
+        body: Center(
+          child: Column(
+              children: [
+                noteTitleBuilder(),
+                quizTypeToggleButton(),
+                Text("\n$cards"), // DEBUG
+                flashCardWidget(),
+                // Text("\n[DEBUG] score: ${cardContent[0].score}\n"), // DEBUG
+                wrongFlashCardButton(),
+                correctFlashCardButton(),
+              ],
+            )
+          )
+        
+      );
+  }
+
+
+  // QUIZ FRONTEND
+  Widget blanksQuiz(){
+    return Scaffold(
+        appBar: UiBuilder.appBarBuilder(this,titleText),
+        drawer: UiBuilder.drawerBuilder(this),
+        body: Center(
+        child:Column(
+            children: [
+              noteTitleBuilder(),
+              quizTypeToggleButton(),
+              // Text("\n$cards"), // DEBUG
+              blankInfo(cardContent[0].topic,cardContent[0].information),
+              Text("\n[DEBUG] answer: ${blankedInfo[1]}, shuffle: ${widget.usersettings.shuffle}, filter: ${widget.usersettings.filterWords}, scoring: ${widget.usersettings.flashScoring}\n"), // DEBUG
+              checkAnswerButton(),
+            ],
+          
         )
-      ],)
-
+      )
     );
   }
 
 
 
-  List<ContentItem> filterContent(List<ContentItem> content,{String? note, int? score}){
+  // NOTE TITLE
+  Widget noteTitleBuilder(){
+    return FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      future: FirebaseFirestore.instance.collection('users').doc(uid).collection('notes').doc(noteid).get(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+              return const CircularProgressIndicator();
+        }
+        if (!snapshot.hasData || !snapshot.data!.exists) {
+          return const Text('Note title not found');
+        }
+
+
+        final data = snapshot.data!.data()!;
+        return Text('Title: ${data['title']}');
+      },
+    );
+  }
+
+  // TOGGLE BUTTON
+  Widget quizTypeToggleButton(){
+    String buttonText = "F | [B]";
+    if(flashcard??widget.flashcard){
+      buttonText = "[F] | B";
+    }
+
+    return ElevatedButton(
+      onPressed: () => setState(() {
+        flashcard = !(flashcard??widget.flashcard);
+      }), 
+      child: Text(buttonText)
+    );
+  }
+
+
+
+
+  // The Flashcard itself
+  Widget flashCardWidget(){
+    return ElevatedButton(
+      onPressed: () => setState(() {
+        if(!showtopic){
+          cardText = cardContent[0].topic;
+          showtopic = true;
+        } else {
+          cardText = cardContent[0].information;
+          showtopic = false;
+        }
+      }), 
+      child: Text(cardText)
+    );
+  }
+
+
+  // Button for getting a flashcard wrong
+  Widget wrongFlashCardButton(){
+    if(widget.usersettings.flashScoring){
+      return IconButton(
+        onPressed: () => nextContent(-1), 
+        icon: Icon(Icons.close_rounded)
+      );
+    }else{
+      return IconButton(
+        onPressed: () => prevContent(), 
+        icon: Icon(Icons.arrow_back_rounded)
+      );
+    }
+  }
+
+  // Button for getting a flashcard correct
+  Widget correctFlashCardButton(){
+    if(widget.usersettings.flashScoring){
+      return IconButton(
+        onPressed: () => nextContent(1), 
+        icon: Icon(Icons.check_rounded)
+      );
+    }else{
+      return IconButton(
+        onPressed: () => nextContent(0), 
+        icon: Icon(Icons.arrow_forward_rounded)
+      );
+    }
+  }
+
+  // Button to check answer in blank
+  Widget checkAnswerButton(){
+    return ElevatedButton(
+      onPressed: () => checkBlank(), 
+      child: Text("Check Answer")
+    );
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  @override
+  void dispose() {
+    blankController.dispose();
+    super.dispose();
+  }
+
+
+
+
+  List<ContentItem> filterContent(List<ContentItem> content,{int? score}){
     List<ContentItem> filtered = [];
 
     for(final item in content){
-      if((note != null && item.noteId == note) || (note==null && item.score == score)){
+      if (score != null && item.score == score){
         filtered.add(item);
       }
     }
     return filtered;
   }
+
+
 
 
   int? getMinScore(List<ContentItem> content){
@@ -97,17 +321,137 @@ class _FlashcardPageState extends State<FlashcardPage> {
   }
 
 
-  void nextContent(int bonus){
+
+  void nextContent(int bonus) async {
     try{
-      // FOR TESTING PURPOSES I made the score not final and I change it directly. 
-      // This should be changed when I implement the firebase stuff.
-      cardContent[0].score += bonus;
+      FirebaseFirestore.instance.collection('users').doc(uid).collection('notes').doc(widget.noteid).collection("contents").doc(cardContent[0].id).update({"score": cardContent[0].score + bonus});
+      print(cardContent);
+      final c = await FirebaseFirestore.instance.collection('users').doc(uid).collection('notes').doc(widget.noteid).collection("contents").doc(cardContent[0].id).get().timeout(const Duration(seconds: 10));
+      cardContent[0].score = ContentItem.fromMap(c.data()!,c.id).score;
+      previousCardContent.add(cardContent[0]);
       cardContent.removeAt(0);
 
-      setState(() {
-
-      });
+      getCards();
     }catch(e){}
+  }
+
+  void prevContent() async {
+    try{
+      cardContent.insert(0, previousCardContent.last);
+      getCards();
+    }catch(e){}
+  }
+
+
+
+  // QUIZ FUNCTIONS
+
+  Widget blank(TextEditingController controller, {double width = 80}) {
+    return SizedBox(
+      width: width,
+      child: TextField(
+        controller: controller,
+        textAlign: TextAlign.center,
+        decoration: const InputDecoration(
+          isDense: true,
+          contentPadding: EdgeInsets.symmetric(vertical: 2, horizontal: 4),
+          enabledBorder: UnderlineInputBorder(
+            borderSide: BorderSide(color: Colors.blue, width: 2),
+          ),
+        ),
+      ),
+    );
+  }
+
+
+
+  void checkBlank() {
+    final ans = blankController.text.trim().toLowerCase();
+    blankController.text = "";
+    if (ans == blankedInfo[1]) {
+      nextContent(1);
+    } else {
+      nextContent(-1);
+    }
+  }
+
+
+
+  Widget blankInfo(String topic,String text){
+    return Text.rich(
+      TextSpan(
+        children: [
+          TextSpan(text: blankedInfo[0]),
+          WidgetSpan(
+            alignment: PlaceholderAlignment.baseline,
+            baseline: TextBaseline.alphabetic,
+            child: blank(blankController, width: 90),
+          ),
+          TextSpan(text: blankedInfo[2])
+        ],
+      ),
+    );
+  }
+
+
+
+  List<String> parseBERT(String topic, String text){
+
+    final wordRegex = RegExp(r'\b\w+\b');
+    final matches = wordRegex.allMatches(text);
+    List<RegExpMatch> words = [];
+
+    List<String> filler = ['maybe','could','are','just','defined','by','where','do','means',':',')','(','\n','is','for','and','nor','but','or','yet','so','the','a','an','no','i','you','she','he','it','we','they','me','you','him','her','it','us','them','mine','yours','his','hers','its','ours','theirs','my','your','his','her','its','our','their','myself','yourself','himself','herself','itself','oneself','ourselves','yourselves','themselves','this','that','these','those','such','neither','who','whom','whose','which','that','whoever','whomever','whichever','whatever','who','whom','whose','what','which','whatever','another','anybody','anyone','anything','each','either','everybody','everyone','everything','much','neither','nobody','somebody','someone','somethings','in','on','at','by','for','with','about','against','between','into','through','during','before','after','above','below','about','across','during','except','since','against','for','than','along','from','through','among','in','to','around','toward','as','into','at','like','of','until','onto','via','with','by'];
+
+    for(final match in matches){
+      if(!widget.usersettings.filterWords || !filler.contains(match.group(0)!.toLowerCase())){
+        words.add(match);
+      }
+
+    }
+
+    int ans = widget.random.nextInt(words.length);
+    
+    String front = "$topic\n${text.substring(0,words[ans].start)}";
+    String answer = words[ans].group(0)!;
+    String back = text.substring(words[ans].end);
+
+    List<String> parsed = [front,answer,back];
+    return parsed;
+  }
+
+
+
+  Future<void> getCards() async {
+
+    // Gets all content with the lowest score in the note
+    if(cardContent.isEmpty){
+      if(widget.usersettings.flashScoring){
+        int? minScore = getMinScore(noteContent);
+        cardContent = filterContent(noteContent,score: minScore);
+      }else{
+        cardContent = noteContent.sublist(0);
+      }
+      if(widget.usersettings.shuffle){
+        cardContent.shuffle();
+      }
+    }
+    
+    cardText = cardContent[0].information;
+    showtopic = false;
+
+    String str = "";
+
+    for (final card in cardContent){
+      str += "${card.topic} ${card.score}\n";
+    }
+
+    blankedInfo = parseBERT(cardContent[0].topic, cardContent[0].information);
+
+    cards = str;
+    setState(() {
+      isLoading = false;
+    });
   }
 
 }

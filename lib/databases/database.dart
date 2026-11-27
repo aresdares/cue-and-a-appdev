@@ -96,8 +96,9 @@ class ContentItem{
     final String noteId;
     final String topic; // LEFT column (cue/topic)
     final String information; // RIGHT column (info/definition)
+    final int position;
     int score; // mastery score for Flashcard / Recall mode
-    int position; //  row order
+    //int position; //  row order
 
 
 
@@ -115,8 +116,9 @@ class ContentItem{
             'noteId': noteId,
             'topic': topic,
             'information': information,
+            'position' : position,
             'score': score,
-            'position': position,
+            //'position': position,
         };
     }
 
@@ -127,6 +129,7 @@ class ContentItem{
             noteId: map['noteId']??'',
             topic: map['topic']??'',
             information: map['information']??'',
+            //position: map['position']??'',
             score: map['score']??0,
             position: map['position']??0,
         );
