@@ -10,9 +10,18 @@ import '../databases/database.dart';
 
 class UiBuilder {
   
-  static AppBar appBarBuilder(caller, String title){
+  static String noteTitle = "";
+
+  static AppBar appBarBuilder(caller, String title, {String subtitle = ""}){
+    List<Widget> titleWidgets = [Text(title)];
+    if(subtitle.isNotEmpty){
+      titleWidgets.add(noteTitleBuilder(caller));
+    }
+    
     return AppBar(
-      title: Text(title),
+      title: Column(
+        children: titleWidgets
+      ),
       centerTitle: true,
       leadingWidth: 100,
       leading: Row(
@@ -45,6 +54,32 @@ class UiBuilder {
       )
     );
   }
+
+  
+  // NOTE TITLE
+  static Widget noteTitleBuilder(caller){
+    return FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      future: FirebaseFirestore.instance.collection('users').doc(caller.uid).collection('notes').doc(caller.noteid).get(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+              return const CircularProgressIndicator();
+        }
+        if (!snapshot.hasData || !snapshot.data!.exists) {
+          return const Text('Note title not found');
+        }
+
+        final data = snapshot.data!.data()!;
+        noteTitle = data['title'];
+        return Text(
+          'Title: ${data['title']}',
+          style: TextStyle(
+            fontSize: 15 // ADJUST FOR FRONTEND
+          )
+        );
+      },
+    );
+  }
+
 
   // Menu Button
   static Widget menuButton(caller, context){

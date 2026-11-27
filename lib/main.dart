@@ -1,11 +1,8 @@
-import 'package:appdev_project/services/flashcards.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
-
-import '../services/test_note_editor.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

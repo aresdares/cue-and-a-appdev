@@ -132,12 +132,11 @@ class _FlashcardPageState extends State<FlashcardPage> {
   // FLASHCARD FRONTEND
   Widget flashCards(){
     return Scaffold(
-        appBar: UiBuilder.appBarBuilder(this,titleText),
+        appBar: UiBuilder.appBarBuilder(this,titleText,subtitle:"Title: $noteTitle"),
         drawer: UiBuilder.drawerBuilder(this),
         body: Center(
           child: Column(
               children: [
-                noteTitleBuilder(),
                 quizTypeToggleButton(),
                 Text("\n$cards"), // DEBUG
                 flashCardWidget(),
@@ -155,12 +154,11 @@ class _FlashcardPageState extends State<FlashcardPage> {
   // QUIZ FRONTEND
   Widget blanksQuiz(){
     return Scaffold(
-        appBar: UiBuilder.appBarBuilder(this,titleText),
+        appBar: UiBuilder.appBarBuilder(this,titleText,subtitle:"Title: $noteTitle"),
         drawer: UiBuilder.drawerBuilder(this),
         body: Center(
         child:Column(
             children: [
-              noteTitleBuilder(),
               quizTypeToggleButton(),
               // Text("\n$cards"), // DEBUG
               blankInfo(cardContent[0].topic,cardContent[0].information),
@@ -170,27 +168,6 @@ class _FlashcardPageState extends State<FlashcardPage> {
           
         )
       )
-    );
-  }
-
-
-
-  // NOTE TITLE
-  Widget noteTitleBuilder(){
-    return FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      future: FirebaseFirestore.instance.collection('users').doc(uid).collection('notes').doc(noteid).get(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-              return const CircularProgressIndicator();
-        }
-        if (!snapshot.hasData || !snapshot.data!.exists) {
-          return const Text('Note title not found');
-        }
-
-
-        final data = snapshot.data!.data()!;
-        return Text('Title: ${data['title']}');
-      },
     );
   }
 
