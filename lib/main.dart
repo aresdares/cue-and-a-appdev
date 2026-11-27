@@ -1,5 +1,6 @@
 import 'package:appdev_project/pages/note_editor_page.dart';
 import 'package:appdev_project/pages/test_home_page.dart';
+import 'package:appdev_project/services/authentication.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -57,7 +58,8 @@ class CueAndA extends StatelessWidget {
       title: "Cue and A",
       initialRoute: "/",
       routes: {
-        "/": (context) => TestHomepage(userSettings: userSettings,), // AUTHENTICATION
+        "/": (context) => TestHomepage(userSettings: userSettings,),
+        "/login": (context) => DummyLogin(userSettings: userSettings),
         "/dashboard": (context) => Scaffold(), // DASHBOARD
         "/editor": (context) => NoteEditorPage(userSettings: userSettings, noteId: "pVAR4EdsMejEHzWoqihN"), // NOTE EDITOR
         "/flashcards": (context) => FlashcardPage(userSettings: userSettings, noteId: "pVAR4EdsMejEHzWoqihN", flashcard: true), // FLASHCARDS

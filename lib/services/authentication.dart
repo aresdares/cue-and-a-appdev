@@ -1,8 +1,12 @@
+import 'package:appdev_project/main.dart';
 import 'package:appdev_project/services/dashboard.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
+
+import '../main.dart';
+import './ui_builder.dart';
 
 //Instantiate after calling await FireBase.initializeApp()
 class Authentication {
@@ -45,23 +49,18 @@ class Authentication {
   }
 }
 
-void main() async{
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-
-  runApp(LogApp());
-}
 
 class LogApp extends StatelessWidget {
-  new({super.key});
+  new({super.key, required this.userSettings});
+
+  final UserSettings userSettings;
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Flutter Firebase Login',
+      title: 'Cue and A Login',
       theme: ThemeData(primarySwatch: Colors.blue),
       // StreamBuilder listens to login/logout events in real time
       home: StreamBuilder<User?>(
@@ -70,14 +69,16 @@ class LogApp extends StatelessWidget {
           if (snapshot.hasData) {
             return const Dashboard();
           }
-          return DummyLogin();
+          return DummyLogin(userSettings: userSettings);
         },
       ),
     );
   }
 }
 class DummyLogin extends StatefulWidget {
-  new({super.key});
+  new({super.key, required this.userSettings});
+
+  final UserSettings userSettings;
 
   @override
   State<DummyLogin> createState() => _DummyLoginState();
@@ -116,7 +117,8 @@ class _DummyLoginState extends State<DummyLogin> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
+      appBar: UiBuilder.appBarBuilder(this,"Login"),
+      drawer: UiBuilder.drawerBuilder(this),
       body: Column(
         children: [
            SizedBox(
